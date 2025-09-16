@@ -1,0 +1,56 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Auto-generated files
+*.dotCover
+*.ncrunch*
+.vs/
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+
+# Environment files
+*.env
+.production.env
+
+# ASP.NET Core / IIS
+*.vs/
+appsettings.*.json    # opsiyonel: eðer prod config gitmezse
+wwwroot/
+*.db
+*.log
+
+# NuGet
+*.nupkg
+packages/
+.nuget/
+
+# JetBrains Rider
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+
+# EF Core Migrations (opsiyonel)
+Migrations/
