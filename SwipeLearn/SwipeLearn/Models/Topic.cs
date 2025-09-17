@@ -8,7 +8,7 @@ namespace SwipeLearn.Models
     {
         [Key]
         [Column("id")]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         [Required]
         [Column("description")]
@@ -16,7 +16,7 @@ namespace SwipeLearn.Models
         public string Description { get; set; } = string.Empty;
 
         // Navigation Properties
-        public ICollection<Video> Videos { get; set; } = new List<Video>();
-        public ICollection<Question> Questions { get; set; } = new List<Question>();
+        //public ICollection<Video> Videos { get; set; } = new List<Video>();
+        //public ICollection<Question> Questions { get; set; } = new List<Question>();
     }
 }

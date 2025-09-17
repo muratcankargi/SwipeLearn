@@ -13,7 +13,7 @@ namespace SwipeLearn.Models
         [Required]
         [ForeignKey(nameof(Topic))]
         [Column("topic_id")]
-        public int TopicId { get; set; }
+        public Guid TopicId { get; set; }
 
         [Required]
         [Column("video_path")]
