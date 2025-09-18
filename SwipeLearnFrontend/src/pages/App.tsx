@@ -3,6 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Brain } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import z from "zod";
 
 const schema = z.object({
@@ -17,13 +18,17 @@ type FormData = z.infer<typeof schema>;
 export function App() {
   const methods = useForm({ resolver: zodResolver(schema) });
 
+  const navigate = useNavigate();
+
   const onSubmit = (data: FormData) => {
     console.log("Data: ", data);
+
+    navigate("/kaydir/1");
   };
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-gray-100">
-      <div className="flex w-full flex-col items-center gap-12">
+      <div className="flex w-full flex-col items-center gap-8">
         <div className="flex flex-col gap-4">
           <div className="mx-auto">
             <Brain className="h-20 w-20" />
