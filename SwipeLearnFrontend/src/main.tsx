@@ -3,6 +3,7 @@ import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { App } from "./pages/App";
 import { Swipe } from "./pages/Swipe";
+import { Learn } from "./pages/Learn";
 
 const router = createBrowserRouter([
   {
@@ -12,6 +13,10 @@ const router = createBrowserRouter([
   {
     path: "/kaydir/:id",
     element: <Swipe />,
+  },
+  {
+    path: "/ogren/:id",
+    element: <Learn />,
   },
 ]);
 

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Brain } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import z from "zod";
@@ -27,11 +27,11 @@ export function App() {
   };
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-gray-100">
+    <main className="bg-tw-background flex min-h-screen w-full justify-center pt-24">
       <div className="flex w-full flex-col items-center gap-8">
         <div className="flex flex-col gap-4">
           <div className="mx-auto">
-            <Brain className="h-20 w-20" />
+            <img src="/mascot.png" width={200} height={200} />
           </div>
           <h1 className="text-4xl font-extrabold">Ne öğrenmek istiyorsun?</h1>
         </div>
@@ -42,10 +42,14 @@ export function App() {
         >
           <Textarea
             placeholder="İstanbul'un fethi"
-            className="h-36 bg-gray-200"
+            className="bg-tw-primary h-36"
             {...methods.register("topic")}
           />
-          <Button type="submit" className="ml-auto" size={"lg"}>
+          <Button
+            type="submit"
+            className="bg-tw-secondary hover:bg-tw-secondary/90 ml-auto"
+            size={"lg"}
+          >
             İlerle
             <ArrowRight />
           </Button>
