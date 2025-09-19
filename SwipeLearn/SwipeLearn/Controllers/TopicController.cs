@@ -19,6 +19,8 @@ namespace SwipeLearn.Controllers
         }
 
         [HttpGet]
+        [ProducesResponseType(typeof(Array), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetTopics()
         {
             return Ok(await _context.Topics.ToListAsync());
@@ -26,10 +28,10 @@ namespace SwipeLearn.Controllers
         [HttpPost]
         public async Task<ActionResult> AddTopic(Topic topic)
         {
-            var (guid, text) = await _service.Create(topic);
-            if (guid == Guid.Empty) return BadRequest("Empty or exist description");
+            var (guid, text, urls) = await _service.Create(topic);
+            //if (guid == Guid.Empty) return BadRequest("Empty or exist description");
 
-            return Ok(new { guid = guid, text = text });
+            return Ok(new { guid = guid, text = text, image_urls = urls });
         }
 
     }
