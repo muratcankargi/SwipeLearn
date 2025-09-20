@@ -19,7 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connString));
 
 builder.Services.AddScoped<ITopic, TopicRepository>();
-builder.Services.AddScoped<TopicService>();
+builder.Services.AddScoped<MainService>();
 
 var AI_API_KEY = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
 builder.Services.AddSingleton(new OpenAIClient(AI_API_KEY));

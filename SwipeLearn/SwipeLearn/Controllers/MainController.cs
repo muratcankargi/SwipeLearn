@@ -11,8 +11,8 @@ namespace SwipeLearn.Controllers
     public class TopicController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly TopicService _service;
-        public TopicController(ApplicationDbContext context, TopicService service)
+        private readonly MainService _service;
+        public TopicController(ApplicationDbContext context, MainService service)
         {
             _context = context;
             _service = service;
@@ -25,13 +25,15 @@ namespace SwipeLearn.Controllers
         {
             return Ok(await _context.Topics.ToListAsync());
         }
+
+        //create topic 
         [HttpPost]
         public async Task<ActionResult> AddTopic(Topic topic)
         {
-            var (guid, text, urls) = await _service.Create(topic);
-            //if (guid == Guid.Empty) return BadRequest("Empty or exist description");
+            var guid = await _service.CreateTopic(topic);
+            //if (guid == Guid.Empty) return BadRequest("Empty or exist description"); //farklı düşün
 
-            return Ok(new { guid = guid, text = text, image_urls = urls });
+            return Ok(new { id = guid });
         }
 
     }

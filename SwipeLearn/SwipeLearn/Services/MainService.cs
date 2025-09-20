@@ -8,42 +8,51 @@ using Xabe.FFmpeg.Downloader;
 
 namespace SwipeLearn.Services
 {
-    public class TopicService
+    public class MainService
     {
-        private readonly ITopic _repository;
+        private readonly ITopic _topicRepository;
         private readonly HttpClient _httpClient;
 
-        public TopicService(ITopic repository, IHttpClientFactory httpClientFactory)
+        public MainService(ITopic repository, IHttpClientFactory httpClientFactory)
         {
-            _repository = repository;
+            _topicRepository = repository;
             _httpClient = httpClientFactory.CreateClient();
         }
+        public async Task<Guid> CreateTopic(Topic topic)
+        {
+            if (topic == null || topic.Description == null) return (Guid.Empty);
 
+            //var topicExist = await _repository.GetByDescription(topic.Description);
+            //if (topicExist != null) return (Guid.Empty, "", new List<string>());
+
+            topic.Id = Guid.NewGuid();
+            await _topicRepository.AddAsync(topic);
+            return topic.Id;
+        }
         public async Task<(Guid id, string text, List<string> urls)> Create(Topic topic)
         {
             if (topic == null || topic.Description == null) return (Guid.Empty, "", new List<string>());
 
-            var topicExist = await _repository.GetByDescription(topic.Description);
+            var topicExist = await _topicRepository.GetByDescription(topic.Description);
             if (topicExist != null) return (Guid.Empty, "", new List<string>());
 
             topic.Id = Guid.NewGuid();
             //await _repository.AddAsync(topic);
             topic.Description = "İstanbul'un Fethi";
             //var text = await GetText(topic.Description);
-            var text = "abc";
-            //var text = "İstanbul'un Fethi, 29 Mayıs 1453 tarihinde gerçekleşmiş, tarihin akışını değiştiren önemli bir olaydır. Osmanlı Padişahı II. Mehmet, şehri kuşatma planları yaparken, tüm dünya bu büyük mücadeleyi merakla izliyordu. Kuşatma sırasında kullanılan devasa toplar, surları aşarak İstanbul'un savunmasını zayıflattı.\n\nFethin en çarpıcı anlarından biri, şehrin surlarının önünde yer alan etkileyici Topkapı Sarayı’dır. Sarayın yüksek ve sağlam surları, bir zamanlar Bizans'ın gücünü simgeliyordu. II. Mehmet’in stratejik liderliği sayesinde, Osmanlı ordusu bu güçlü savunmayı aşmayı başardı. \n\nŞehrin fethi, sadece askeri bir zafer değil, kültürel ve ekonomik bir dönüşümün başlangıcını müjdeliyordu. İstanbul, tüm dünyanın gözdesi haline gelerek, Doğu ile Batı arasında bir köprü işlevi gördü. \n\nSonuç olarak, İstanbul'un Fethi, sadece askeri güç değil, aynı zamanda zeka ve stratejinin de bir zaferiydi. Bu olay, şehirlerin tarihindeki önemli dönüm noktalarından biri olarak günümüzde bile etkisini sürdürmektedir. İstanbul, fetihle birlikte Osmanlı İmparatorluğu’nun kalbi olmuş, tüm dünyanın ilgisini üzerine çekmiştir.";
+            var text = "İstanbul'un Fethi, 29 Mayıs 1453 tarihinde gerçekleşmiş, tarihin akışını değiştiren önemli bir olaydır. Osmanlı Padişahı II. Mehmet, şehri kuşatma planları yaparken, tüm dünya bu büyük mücadeleyi merakla izliyordu. Kuşatma sırasında kullanılan devasa toplar, surları aşarak İstanbul'un savunmasını zayıflattı.\n\nFethin en çarpıcı anlarından biri, şehrin surlarının önünde yer alan etkileyici Topkapı Sarayı’dır. Sarayın yüksek ve sağlam surları, bir zamanlar Bizans'ın gücünü simgeliyordu. II. Mehmet’in stratejik liderliği sayesinde, Osmanlı ordusu bu güçlü savunmayı aşmayı başardı. \n\nŞehrin fethi, sadece askeri bir zafer değil, kültürel ve ekonomik bir dönüşümün başlangıcını müjdeliyordu. İstanbul, tüm dünyanın gözdesi haline gelerek, Doğu ile Batı arasında bir köprü işlevi gördü. \n\nSonuç olarak, İstanbul'un Fethi, sadece askeri güç değil, aynı zamanda zeka ve stratejinin de bir zaferiydi. Bu olay, şehirlerin tarihindeki önemli dönüm noktalarından biri olarak günümüzde bile etkisini sürdürmektedir. İstanbul, fetihle birlikte Osmanlı İmparatorluğu’nun kalbi olmuş, tüm dünyanın ilgisini üzerine çekmiştir.";
             //var image_urls = await GenerateImagesAsync(topic.Description, text);
             //var voice = SynthesizeToFileAsync(text);
             //Console.WriteLine(voice);
-            List<string> urls = [Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img01.jpg"),
-               Path.Combine(Directory.GetCurrentDirectory(),"wwwroot", "images", "img02.jpg"),
-             Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img03.jpg"),
-             Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img04.jpg"),
+            List<string> urls = [Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img07.jpeg"),
+               Path.Combine(Directory.GetCurrentDirectory(),"wwwroot", "images", "img08.jpg"),
+             Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img09.jpeg"),
+             Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img10.jpeg"),
             ];
             var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", "elevenlabs_20250920_114819.mp3");
 
             var path = await CreateVideoAsync(urls, audioPath);
-            Console.WriteLine("video path =" + path);
+            //Console.WriteLine("video path =" + path);
             return (topic.Id, text, new List<string>());
         }
 
@@ -79,36 +88,83 @@ namespace SwipeLearn.Services
 
         }
 
-        //text to image with fal.ai (flux-pro)
+
+        public async Task<string> GetImagePromptText(string description)
+        {
+            var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+            var requestBody = new
+            {
+                model = "gpt-4o-mini",
+                messages = new[]
+                {
+            new { role = "system", content = "You are an expert visual prompt generator for AI image creation." },
+            new
+            {
+                role = "user",
+                content =
+                $"I will give you a topic. Based on it, create a detailed and inspiring English prompt suitable for generating a single high-quality AI image. " +
+                $"The prompt must describe the scene vividly with clear subjects, atmosphere, background, lighting, mood, and artistic style. " +
+                $"Avoid technical jargon. Focus on making it visually rich and creative. " +
+                $"Topic: {description}"
+            }
+        }
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
+            var resultJson = await response.Content.ReadAsStringAsync();
+
+            using var doc = JsonDocument.Parse(resultJson);
+            var message = doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+
+            return message;
+        }
+
+
+        //
         public async Task<List<string>> GenerateImagesAsync(string topic, string text)
         {
-            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+            var prompt = await GetImagePromptText(text);
+
             var falAiApiKey = Environment.GetEnvironmentVariable("FALAI_API_KEY");
-            Console.WriteLine("token = " + falAiApiKey);
             if (string.IsNullOrEmpty(falAiApiKey))
                 throw new Exception("Fal.ai API key is missing. Set the FALAI_API_KEY environment variable.");
 
-            var prompt = $"Konu: {topic}. Açıklama: {text}. Bu konuya uygun, detaylı ve görsel olarak zengin bir sahneyi hayal et. Renkleri, ışıklandırmayı ve ortamı net şekilde betimle. Odak noktaları belirgin olsun ve görsel olarak etkileyici bir kompozisyon oluştur.";
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Key {falAiApiKey}");
 
+            // 4 resmi aynı anda paralel job olarak isteyelim
+            var tasks = Enumerable.Range(0, 4).Select(_ => GenerateSingleImageAsync(prompt)).ToList();
+            var results = await Task.WhenAll(tasks);
+
+            return results.ToList();
+        }
+
+        private async Task<string> GenerateSingleImageAsync(string prompt)
+        {
             var jsonBody = JsonSerializer.Serialize(new
             {
                 prompt,
-                image_size = new { width = 430, height = 932 },
-                num_images = 4
+                //image_size = "320x600",
+                image_size = new { width = 320, height = 600 },
+                num_images = 1
             });
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://queue.fal.run/fal-ai/flux-pro/v1.1-ultra")
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://queue.fal.run/fal-ai/flux-1/schnell")
             {
                 Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
             };
-
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Key {falAiApiKey}");
 
             var response = await _httpClient.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
 
             using var doc = JsonDocument.Parse(json);
-
             var root = doc.RootElement;
 
             if (root.TryGetProperty("detail", out var detailMsg))
@@ -118,27 +174,35 @@ namespace SwipeLearn.Services
             if (string.IsNullOrEmpty(responseUrl))
                 throw new Exception("Fal.ai response_url not found in API response.");
 
-            // polling
-            for (int i = 0; i < 30; i++) // (~1 minute)
+            // Polling: exponential backoff
+            int delay = 500;
+            for (int i = 0; i < 20; i++) // max ~1 dk
             {
                 var pollResp = await _httpClient.GetAsync(responseUrl);
                 var pollJson = await pollResp.Content.ReadAsStringAsync();
-                using var pollDoc = JsonDocument.Parse(pollJson);
-                var pollRoot = pollDoc.RootElement;
 
-                if (pollRoot.TryGetProperty("images", out var images) && images.GetArrayLength() > 0)
+                try
                 {
-                    return images
-                        .EnumerateArray()
-                        .Select(img => img.GetProperty("url").GetString()!)
-                        .ToList();
+                    using var pollDoc = JsonDocument.Parse(pollJson);
+                    var pollRoot = pollDoc.RootElement;
+
+                    if (pollRoot.TryGetProperty("images", out var images) && images.GetArrayLength() > 0)
+                    {
+                        return images[0].GetProperty("url").GetString()!;
+                    }
+                }
+                catch
+                {
+                    // JSON parse hatası olursa bekle ve tekrar dene
                 }
 
-                await Task.Delay(2000);
+                await Task.Delay(delay);
+                delay = Math.Min(delay * 2, 5000);
             }
 
-            throw new Exception("Fal.ai images were not ready after waiting.");
+            throw new Exception("Fal.ai image was not ready after waiting.");
         }
+
 
         public async Task<string> SynthesizeToFileAsync(string text, string outputFilePath = null, string outputFormat = "mp3_44100_128")
         {
@@ -193,8 +257,6 @@ namespace SwipeLearn.Services
             }
         }
 
-
-
         public async Task<string> CreateVideoAsync(List<string> imagePaths, string audioPath, string outputPath = null)
         {
             if (imagePaths == null || imagePaths.Count == 0)
@@ -207,7 +269,7 @@ namespace SwipeLearn.Services
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
             // FFmpeg dosyalarının hazır olduğundan emin ol
-            await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
+            //await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
 
             // 1. Ses uzunluğunu al
             var audioInfo = await FFmpeg.GetMediaInfo(audioPath);
