@@ -27,8 +27,8 @@ namespace SwipeLearn.Controllers
         }
 
         //create topic 
-        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [HttpPost]
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<ActionResult> AddTopic(Topic topic)
         {
             var guid = await _service.CreateTopic(topic);
@@ -44,7 +44,7 @@ namespace SwipeLearn.Controllers
             //if (result == null)
             //    return NotFound(new { message = "Topic not found" });
 
-            //return Ok(result);
+            return Ok();
         }
     }
 }
