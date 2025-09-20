@@ -27,6 +27,7 @@ namespace SwipeLearn.Controllers
         }
 
         //create topic 
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         [HttpPost]
         public async Task<ActionResult> AddTopic(Topic topic)
         {
@@ -36,5 +37,14 @@ namespace SwipeLearn.Controllers
             return Ok(new { id = guid });
         }
 
+        [HttpGet("short-info")]
+        public async Task<IActionResult> GetShortInfo([FromQuery] Guid id)
+        {
+            //var result = await _service.GetShortInfoAsync(id);
+            //if (result == null)
+            //    return NotFound(new { message = "Topic not found" });
+
+            //return Ok(result);
+        }
     }
 }
