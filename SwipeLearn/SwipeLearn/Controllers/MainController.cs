@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SwipeLearn.Context;
 using SwipeLearn.Models;
+using SwipeLearn.Models.ViewModels;
 using SwipeLearn.Services;
 
 namespace SwipeLearn.Controllers
@@ -28,13 +29,13 @@ namespace SwipeLearn.Controllers
 
         //create topic 
         [HttpPost]
-        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TopicGuid), StatusCodes.Status200OK)]
         public async Task<ActionResult> AddTopic(Topic topic)
         {
             var guid = await _service.CreateTopic(topic);
             //if (guid == Guid.Empty) return BadRequest("Empty or exist description"); //farklı düşün
 
-            return Ok(new { id = guid });
+            return Ok(guid);
         }
 
         [HttpGet("short-info")]
