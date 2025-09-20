@@ -30,9 +30,11 @@ namespace SwipeLearn.Controllers
         
         [HttpGet("short-info")]
         [ProducesResponseType(typeof(TopicInfoItem), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetShortInfo([FromQuery] Guid id)
         {
             TopicInfoItem arr = await _service.GetStructuredTopicInfoAsync(id);
+            if (arr == new TopicInfoItem()) return NotFound();
             return Ok(arr);
         }
     }
