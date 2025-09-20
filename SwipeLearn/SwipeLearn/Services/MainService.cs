@@ -11,13 +11,15 @@ namespace SwipeLearn.Services
 {
     public class MainService
     {
-        private readonly ITopic _topicRepository;
         private readonly HttpClient _httpClient;
+        private readonly ITopic _topicRepository;
+        private readonly ITopicMaterial _topicMaterialRepository;
 
-        public MainService(ITopic repository, IHttpClientFactory httpClientFactory)
+        public MainService(IHttpClientFactory httpClientFactory, ITopic repository, ITopicMaterial topicMaterial)
         {
-            _topicRepository = repository;
             _httpClient = httpClientFactory.CreateClient();
+            _topicRepository = repository;
+            _topicMaterialRepository = topicMaterial;
         }
         public async Task<TopicGuid> CreateTopic(Topic topic)
         {
@@ -30,7 +32,7 @@ namespace SwipeLearn.Services
             await _topicRepository.AddAsync(topic);
             TopicGuid model = new TopicGuid();
             model.Id = topic.Id;
-            _ = await GetText(topic.Description); //fire and forget
+            _ = await GetText(topic.Description, model.Id); //fire and forget
 
             return model;
 
@@ -63,7 +65,7 @@ namespace SwipeLearn.Services
         }
 
         //topic to text with chatgpt
-        public async Task<string> GetText(string description)
+        public async Task<string> GetText(string description, Guid id)
         {
             var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
@@ -89,11 +91,12 @@ namespace SwipeLearn.Services
                 .GetProperty("message")
                 .GetProperty("content")
                 .GetString();
-            
+
             TopicMaterial topicMaterial = new TopicMaterial();
             topicMaterial.Description = message;
+            topicMaterial.TopicId = id;
+            await _topicMaterialRepository.AddAsync(topicMaterial);
             return message;
-
         }
 
 
@@ -321,6 +324,88 @@ namespace SwipeLearn.Services
             return outputPath;
         }
 
-    }
 
+
+        public async Task<List<TopicInfoItem>> GetStructuredTopicInfoAsync(Guid id)
+        {
+            var topicModel = await _topicMaterialRepository.GetByTopicId(id);
+            if (topicModel == null || string.IsNullOrEmpty(topicModel.Description))
+                return new List<TopicInfoItem>();
+
+            var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
+            if (string.IsNullOrEmpty(apiKey))
+                throw new Exception("OpenAI API key is missing.");
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+            var requestBody = new
+            {
+                model = "gpt-4o-2024-08-06",
+                messages = new[]
+                {
+                    new { role = "system", content = "You are a helpful assistant. Respond ONLY with a JSON array of short strings. Do not include any markdown or extra text." },
+                    new { role = "user", content = $"Provide 3–10 important points about this topic as a JSON array of short strings: {topicModel.Description}" }
+                },
+                temperature = 0.3
+            };
+
+            var response = await httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
+            var json = await response.Content.ReadAsStringAsync();
+
+            string? content = null;
+            try
+            {
+                content = JsonDocument.Parse(json)
+                    .RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+            }
+            catch
+            {
+                content = null;
+            }
+
+            if (string.IsNullOrEmpty(content))
+                return new List<TopicInfoItem>();
+
+            // Markdown veya code block temizleme
+            content = content.Trim();
+            if (content.StartsWith("```"))
+            {
+                int firstLineBreak = content.IndexOf('\n');
+                int lastTriple = content.LastIndexOf("```");
+                if (firstLineBreak >= 0 && lastTriple > firstLineBreak)
+                {
+                    content = content.Substring(firstLineBreak + 1, lastTriple - firstLineBreak - 1).Trim();
+                }
+            }
+
+            List<string>? points = null;
+            try
+            {
+                points = JsonSerializer.Deserialize<List<string>>(content);
+            }
+            catch
+            {
+                // fallback: eğer model valid JSON vermediyse, satır satır ayırıp liste yap
+                points = content.Split('\n')
+                                .Select(x => x.Trim().TrimStart('-', '*', '•', '–').Trim())
+                                .Where(x => !string.IsNullOrEmpty(x))
+                                .ToList();
+            }
+
+            if (points == null || points.Count == 0)
+                return new List<TopicInfoItem>();
+
+            return new List<TopicInfoItem>
+            {
+                new TopicInfoItem { Info = points }
+            };
+        }
+
+
+    }
 }

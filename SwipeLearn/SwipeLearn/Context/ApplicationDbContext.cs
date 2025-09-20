@@ -10,5 +10,6 @@ namespace SwipeLearn.Context
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Video> Videos { get; set; }
         public DbSet<Question> Questions { get; set; }
+        public DbSet<TopicMaterial> TopicMaterials { get; set; }
     }
 }

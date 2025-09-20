@@ -11,20 +11,10 @@ namespace SwipeLearn.Controllers
     [Route("api/[controller]")]
     public class TopicController : Controller
     {
-        private readonly ApplicationDbContext _context;
         private readonly MainService _service;
-        public TopicController(ApplicationDbContext context, MainService service)
+        public TopicController(MainService service)
         {
-            _context = context;
             _service = service;
-        }
-
-        [HttpGet]
-        [ProducesResponseType(typeof(Array), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> GetTopics()
-        {
-            return Ok(await _context.Topics.ToListAsync());
         }
 
         //create topic 
@@ -37,15 +27,13 @@ namespace SwipeLearn.Controllers
 
             return Ok(guid);
         }
-
+        
         [HttpGet("short-info")]
+        [ProducesResponseType(typeof(List<TopicInfoItem>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetShortInfo([FromQuery] Guid id)
         {
-            //var result = await _service.GetShortInfoAsync(id);
-            //if (result == null)
-            //    return NotFound(new { message = "Topic not found" });
-
-            return Ok();
+            List<TopicInfoItem> arr = await _service.GetStructuredTopicInfoAsync(id);
+            return Ok(arr);
         }
     }
 }
