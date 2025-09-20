@@ -32,8 +32,18 @@ namespace SwipeLearn.Services
             await _topicRepository.AddAsync(topic);
             TopicGuid model = new TopicGuid();
             model.Id = topic.Id;
-            _ = await GetText(topic.Description, model.Id); //fire and forget
-
+            _ = Task.Run(async () => //fire and forget
+            {
+                try
+                {
+                    await GetText(topic.Description, model.Id);
+                }
+                catch (Exception ex)
+                {
+                    // Hataları logla ama main akışı etkileme
+                    Console.WriteLine($"GetText failed: {ex.Message}");
+                }
+            });
             return model;
 
         }
@@ -96,6 +106,7 @@ namespace SwipeLearn.Services
             topicMaterial.Description = message;
             topicMaterial.TopicId = id;
             await _topicMaterialRepository.AddAsync(topicMaterial);
+            //  _ = 
             return message;
         }
 
@@ -138,7 +149,6 @@ namespace SwipeLearn.Services
         }
 
 
-        //
         public async Task<List<string>> GenerateImagesAsync(string topic, string text)
         {
             var prompt = await GetImagePromptText(text);
@@ -215,7 +225,7 @@ namespace SwipeLearn.Services
         }
 
 
-        public async Task<string> SynthesizeToFileAsync(string text, string outputFilePath = null, string outputFormat = "mp3_44100_128")
+        public async Task<string> GenerateTextToSpeech(string text, string outputFilePath = null, string outputFormat = "mp3_44100_128")
         {
             try
             {
@@ -326,11 +336,11 @@ namespace SwipeLearn.Services
 
 
 
-        public async Task<List<TopicInfoItem>> GetStructuredTopicInfoAsync(Guid id)
+        public async Task<TopicInfoItem> GetStructuredTopicInfoAsync(Guid id)
         {
             var topicModel = await _topicMaterialRepository.GetByTopicId(id);
             if (topicModel == null || string.IsNullOrEmpty(topicModel.Description))
-                return new List<TopicInfoItem>();
+                return new TopicInfoItem();
 
             var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
             if (string.IsNullOrEmpty(apiKey))
@@ -369,7 +379,7 @@ namespace SwipeLearn.Services
             }
 
             if (string.IsNullOrEmpty(content))
-                return new List<TopicInfoItem>();
+                return new TopicInfoItem();
 
             // Markdown veya code block temizleme
             content = content.Trim();
@@ -398,11 +408,11 @@ namespace SwipeLearn.Services
             }
 
             if (points == null || points.Count == 0)
-                return new List<TopicInfoItem>();
+                return new TopicInfoItem();
 
-            return new List<TopicInfoItem>
+            return new TopicInfoItem()
             {
-                new TopicInfoItem { Info = points }
+                Info = points
             };
         }
 

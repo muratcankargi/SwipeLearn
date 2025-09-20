@@ -29,10 +29,10 @@ namespace SwipeLearn.Controllers
         }
         
         [HttpGet("short-info")]
-        [ProducesResponseType(typeof(List<TopicInfoItem>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TopicInfoItem), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetShortInfo([FromQuery] Guid id)
         {
-            List<TopicInfoItem> arr = await _service.GetStructuredTopicInfoAsync(id);
+            TopicInfoItem arr = await _service.GetStructuredTopicInfoAsync(id);
             return Ok(arr);
         }
     }
