@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn.csproj": {}
+    "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn\\SwipeLearn.csproj": {}
   },
   "projects": {
-    "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn.csproj": {
+    "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn\\SwipeLearn.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn.csproj",
+        "projectUniqueName": "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn\\SwipeLearn.csproj",
         "projectName": "SwipeLearn",
-        "projectPath": "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn.csproj",
+        "projectPath": "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn\\SwipeLearn.csproj",
         "packagesPath": "C:\\Users\\murat\\.nuget\\packages\\",
-        "outputPath": "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\obj\\",
+        "outputPath": "D:\\Hackathon\\SwipeLearn\\SwipeLearn\\SwipeLearn\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\murat\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -69,6 +69,18 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.4.0, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[9.0.9, )"
+            },
+            "Xabe.FFmpeg": {
+              "target": "Package",
+              "version": "[6.0.2, )"
+            },
+            "Xabe.FFmpeg.Downloader": {
+              "target": "Package",
+              "version": "[6.0.2, )"
             }
           },
           "imports": [
