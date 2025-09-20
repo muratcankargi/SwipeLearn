@@ -1,4 +1,6 @@
-export function Loading() {
+import { WaitingInfos } from "@/components/waiting-infos";
+
+export function Waiting() {
   return (
     <main className="bg-tw-background flex min-h-screen w-full flex-col items-center justify-center gap-4">
       <div className="flex flex-col gap-4">
@@ -17,9 +19,7 @@ export function Loading() {
 
       <div className="bg-tw-secondary h-4 w-4 animate-bounce rounded-full"></div>
 
-      <div className="bg-tw-primary flex min-h-24 w-1/3 items-center justify-center rounded-md">
-        <p>İstanbul 1453 yılında feth edilmiştir.</p>
-      </div>
+      <WaitingInfos />
 
       <p className="text-sm text-gray-500">
         Videolar oluşturulduğunda otomatik olarak yönlendirileceksin.

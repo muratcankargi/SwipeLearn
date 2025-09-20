@@ -23,7 +23,7 @@ export function App() {
   const onSubmit = (data: FormData) => {
     console.log("Data: ", data);
 
-    navigate("/kaydir/1");
+    navigate("/hazirlanma/1");
   };
 
   return (

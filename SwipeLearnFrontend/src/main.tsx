@@ -4,11 +4,16 @@ import { RouterProvider } from "react-router/dom";
 import { App } from "./pages/App";
 import { Swipe } from "./pages/Swipe";
 import { Quiz } from "./pages/Quiz";
+import { Waiting } from "./pages/Waiting";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+  },
+  {
+    path: "/hazirlanma/:id",
+    element: <Waiting />,
   },
   {
     path: "/kaydir/:id",

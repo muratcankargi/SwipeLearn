@@ -1,4 +1,3 @@
-import { Loading } from "@/components/loading";
 import { TakeNotes } from "@/components/take-notes";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, NotebookPen } from "lucide-react";
@@ -20,8 +19,6 @@ export function Swipe() {
     videoUrls,
     videoRefs,
   } = useHandleVideoChanges();
-
-  return <Loading />;
 
   return (
     <main className="bg-tw-background flex min-h-screen w-full flex-col items-center gap-4 pt-20">
