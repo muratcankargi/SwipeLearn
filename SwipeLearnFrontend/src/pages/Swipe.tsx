@@ -21,8 +21,8 @@ export function Swipe() {
   } = useHandleVideoChanges();
 
   return (
-    <main className="bg-tw-background flex min-h-screen w-full flex-col items-center gap-4 pt-20">
-      <div className="grid w-full grid-cols-3 px-4">
+    <>
+      <div className="my-4 grid w-full grid-cols-3 px-4">
         <div className="font-semibold">
           {currentVideoIndex + 1}/{videoUrls.length}. Video
         </div>
@@ -72,7 +72,7 @@ export function Swipe() {
       </div>
 
       <TakeNotes />
-    </main>
+    </>
   );
 }
 

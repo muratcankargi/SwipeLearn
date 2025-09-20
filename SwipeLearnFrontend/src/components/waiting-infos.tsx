@@ -38,7 +38,7 @@ export function WaitingInfos() {
   }, []);
 
   return (
-    <div className="bg-tw-primary relative flex min-h-24 w-1/3 items-center justify-center rounded-md">
+    <div className="bg-tw-primary relative my-2 flex min-h-24 w-1/3 items-center justify-center rounded-md">
       <div className="absolute top-1 left-2 text-sm">{timer}</div>
       <p key={currentInfo} className="fade-in max-w-[80%] text-center">
         {currentInfo}
