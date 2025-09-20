@@ -30,7 +30,10 @@ namespace SwipeLearn.Services
             await _topicRepository.AddAsync(topic);
             TopicGuid model = new TopicGuid();
             model.Id = topic.Id;
+            _ = await GetText(topic.Description); //fire and forget
+
             return model;
+
         }
         public async Task<(Guid id, string text, List<string> urls)> Create(Topic topic)
         {
@@ -86,7 +89,9 @@ namespace SwipeLearn.Services
                 .GetProperty("message")
                 .GetProperty("content")
                 .GetString();
-
+            
+            TopicMaterial topicMaterial = new TopicMaterial();
+            topicMaterial.Description = message;
             return message;
 
         }
