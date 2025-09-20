@@ -3,7 +3,7 @@ import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { App } from "./pages/App";
 import { Swipe } from "./pages/Swipe";
-import { Learn } from "./pages/Learn";
+import { Quiz } from "./pages/Quiz";
 
 const router = createBrowserRouter([
   {
@@ -15,8 +15,8 @@ const router = createBrowserRouter([
     element: <Swipe />,
   },
   {
-    path: "/ogren/:id",
-    element: <Learn />,
+    path: "/quiz/:id",
+    element: <Quiz />,
   },
 ]);
 

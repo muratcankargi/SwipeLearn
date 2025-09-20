@@ -29,7 +29,7 @@ const indexToLetter: Record<number, string> = {
   3: "D",
 };
 
-export function Learn() {
+export function Quiz() {
   const [questions] = useState<Question[]>(dummyQuestions);
   const [currentIndex, setCurrentIndex] = useState(0);
 

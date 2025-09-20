@@ -3,65 +3,21 @@ import { ArrowLeft, ArrowRight, NotebookPen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 
+const CENTER_OF_SCREEN = window.innerWidth / 2 - 160;
+const VIDEO_WIDTH = 320;
+const VIDEO_HEIGHT = 600;
+
 export function Swipe() {
   const params = useParams<{ id: string }>();
 
-  const centerOfScreen = window.innerWidth / 2 - 160;
-
-  const videoWidth = 320;
-  const videoHeight = 600;
-
-  const [styles, setStyles] = useState([
-    { x: centerOfScreen },
-    { x: centerOfScreen + 320 },
-    { x: centerOfScreen + 640 },
-  ]);
-
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-
-  // videolara ref veriyoruz
-  const videoRefs = [
-    useRef<HTMLVideoElement>(null),
-    useRef<HTMLVideoElement>(null),
-    useRef<HTMLVideoElement>(null),
-  ];
-
-  const nextVideo = () => {
-    if (currentVideoIndex === 2) return;
-
-    setCurrentVideoIndex((prevValue) => prevValue + 1);
-
-    setStyles((prevValues) =>
-      prevValues.map((prevValue) => ({
-        x: prevValue.x - 640,
-      })),
-    );
-  };
-
-  const previousVideo = () => {
-    if (currentVideoIndex === 0) return;
-
-    setCurrentVideoIndex((prevValue) => prevValue - 1);
-
-    setStyles((prevValues) =>
-      prevValues.map((prevValue) => ({
-        x: prevValue.x + 640,
-      })),
-    );
-  };
-
-  useEffect(() => {
-    videoRefs.forEach((ref, index) => {
-      if (!ref.current) return;
-
-      if (index === currentVideoIndex) {
-        ref.current.play();
-      } else {
-        ref.current.pause();
-        // ref.current.currentTime = 0;
-      }
-    });
-  }, [currentVideoIndex]);
+  const {
+    nextVideo,
+    previousVideo,
+    currentVideoIndex,
+    positions,
+    videoUrls,
+    videoRefs,
+  } = useHandleVideoChanges();
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-gray-100">
@@ -78,13 +34,13 @@ export function Swipe() {
           <Button
             onClick={nextVideo}
             size="icon"
-            disabled={currentVideoIndex === 2}
+            disabled={currentVideoIndex === videoUrls.length - 1}
           >
             <ArrowRight />
           </Button>
         </div>
         <div className="flex justify-end">
-          <Link to={`/ogren/${params.id}`}>
+          <Link to={`/quiz/${params.id}`}>
             <Button>
               Quize Geç
               <NotebookPen />
@@ -94,48 +50,81 @@ export function Swipe() {
       </div>
 
       <div className="flex w-full overflow-x-hidden">
-        <video
-          ref={videoRefs[0]}
-          src="/video1.mp4"
-          style={{
-            translate: styles[0].x,
-            width: videoWidth,
-            height: videoHeight,
-            scale: currentVideoIndex === 0 ? 1 : 0.8,
-          }}
-          className="ease rounded-md bg-black transition-transform"
-          controls
-          controlsList="nofullscreen" // TODO: Bunu böyle yapmak yerine translate'i sıfırlayalım
-        />
-
-        <video
-          ref={videoRefs[1]}
-          src="/video2.mp4"
-          style={{
-            translate: styles[1].x,
-            width: videoWidth,
-            height: videoHeight,
-            scale: currentVideoIndex === 1 ? 1 : 0.8,
-          }}
-          className="ease rounded-md bg-black transition-transform"
-          controls
-          controlsList="nofullscreen"
-        />
-
-        <video
-          ref={videoRefs[2]}
-          src="/video3.mp4"
-          style={{
-            translate: styles[2].x,
-            width: videoWidth,
-            height: videoHeight,
-            scale: currentVideoIndex === 2 ? 1 : 0.8,
-          }}
-          className="ease rounded-md bg-black transition-transform"
-          controls
-          controlsList="nofullscreen"
-        />
+        {videoUrls.map((videoUrl, i) => (
+          <video
+            key={videoUrl}
+            ref={videoRefs[i]}
+            src={videoUrl}
+            style={{
+              translate: positions[i].x,
+              width: VIDEO_WIDTH,
+              height: VIDEO_HEIGHT,
+              scale: currentVideoIndex === i ? 1 : 0.8,
+            }}
+            className="ease rounded-md bg-black transition-transform"
+            controls
+            controlsList="nofullscreen" // TODO: Bunu böyle yapmak yerine translate'i sıfırlayalım
+          />
+        ))}
       </div>
     </main>
   );
+}
+
+function useHandleVideoChanges() {
+  const [videoUrls] = useState(["/video1.mp4", "/video2.mp4", "/video3.mp4"]);
+
+  const initialPositions = videoUrls.map((_, i) => {
+    return { x: CENTER_OF_SCREEN + i * VIDEO_WIDTH };
+  });
+
+  const [positions, setPositions] = useState(initialPositions);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+
+  const videoRefs = videoUrls.map((_) => useRef<HTMLVideoElement>(null));
+
+  const nextVideo = () => {
+    if (currentVideoIndex === videoUrls.length - 1) return;
+
+    setCurrentVideoIndex((prevValue) => prevValue + 1);
+
+    setPositions((prevValues) =>
+      prevValues.map((prevValue) => ({
+        x: prevValue.x - VIDEO_WIDTH * 2,
+      })),
+    );
+  };
+
+  const previousVideo = () => {
+    if (currentVideoIndex === 0) return;
+
+    setCurrentVideoIndex((prevValue) => prevValue - 1);
+
+    setPositions((prevValues) =>
+      prevValues.map((prevValue) => ({
+        x: prevValue.x + VIDEO_WIDTH * 2,
+      })),
+    );
+  };
+
+  useEffect(() => {
+    videoRefs.forEach((ref, index) => {
+      if (!ref.current) return;
+
+      if (index === currentVideoIndex) {
+        ref.current.play();
+      } else {
+        ref.current.pause();
+      }
+    });
+  }, [currentVideoIndex]);
+
+  return {
+    nextVideo,
+    previousVideo,
+    positions,
+    currentVideoIndex,
+    videoUrls,
+    videoRefs,
+  };
 }
