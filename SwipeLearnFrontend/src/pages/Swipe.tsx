@@ -1,39 +1,104 @@
+import { Loading } from "@/components/loading";
+import { TakeNotes } from "@/components/take-notes";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, NotebookPen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 
+const CENTER_OF_SCREEN = window.innerWidth / 2 - 160;
+const VIDEO_WIDTH = 320;
+const VIDEO_HEIGHT = 600;
+
 export function Swipe() {
   const params = useParams<{ id: string }>();
 
-  const centerOfScreen = window.innerWidth / 2 - 160;
+  const {
+    nextVideo,
+    previousVideo,
+    currentVideoIndex,
+    positions,
+    videoUrls,
+    videoRefs,
+  } = useHandleVideoChanges();
 
-  const videoWidth = 320;
-  const videoHeight = 600;
+  return <Loading />;
 
-  const [styles, setStyles] = useState([
-    { x: centerOfScreen },
-    { x: centerOfScreen + 320 },
-    { x: centerOfScreen + 640 },
-  ]);
+  return (
+    <main className="bg-tw-background flex min-h-screen w-full flex-col items-center gap-4 pt-20">
+      <div className="grid w-full grid-cols-3 px-4">
+        <div className="font-semibold">
+          {currentVideoIndex + 1}/{videoUrls.length}. Video
+        </div>
+        <div className="flex justify-center gap-4">
+          <button
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-2 transition-transform hover:scale-110 disabled:opacity-50"
+            onClick={previousVideo}
+            disabled={currentVideoIndex === 0}
+          >
+            <ArrowLeft className="h-7 w-7" />
+          </button>
+          <button
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-2 transition-transform hover:scale-110 disabled:opacity-50"
+            onClick={nextVideo}
+            disabled={currentVideoIndex === videoUrls.length - 1}
+          >
+            <ArrowRight className="h-7 w-7" />
+          </button>
+        </div>
+        <div className="flex justify-end">
+          <Link to={`/quiz/${params.id}`}>
+            <Button className="bg-tw-secondary hover:bg-tw-secondary/90">
+              Quize Geç
+              <NotebookPen />
+            </Button>
+          </Link>
+        </div>
+      </div>
 
+      <div className="relative flex w-full overflow-x-hidden">
+        {videoUrls.map((videoUrl, i) => (
+          <video
+            key={videoUrl}
+            ref={videoRefs[i]}
+            src={videoUrl}
+            style={{
+              translate: positions[i].x,
+              width: VIDEO_WIDTH,
+              height: VIDEO_HEIGHT,
+              scale: currentVideoIndex === i ? 1 : 0.8,
+            }}
+            className="ease rounded-md bg-black transition-transform"
+            controls
+            controlsList="nofullscreen" // TODO: Bunu böyle yapmak yerine translate'i sıfırlayalım
+          />
+        ))}
+      </div>
+
+      <TakeNotes />
+    </main>
+  );
+}
+
+function useHandleVideoChanges() {
+  const [videoUrls] = useState(["/video1.mp4", "/video2.mp4", "/video3.mp4"]);
+
+  const initialPositions = videoUrls.map((_, i) => {
+    return { x: CENTER_OF_SCREEN + i * VIDEO_WIDTH };
+  });
+
+  const [positions, setPositions] = useState(initialPositions);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
-  // videolara ref veriyoruz
-  const videoRefs = [
-    useRef<HTMLVideoElement>(null),
-    useRef<HTMLVideoElement>(null),
-    useRef<HTMLVideoElement>(null),
-  ];
+  const videoRefs = videoUrls.map((_) => useRef<HTMLVideoElement>(null));
 
   const nextVideo = () => {
-    if (currentVideoIndex === 2) return;
+    if (currentVideoIndex === videoUrls.length - 1) return;
 
     setCurrentVideoIndex((prevValue) => prevValue + 1);
 
-    setStyles((prevValues) =>
+    setPositions((prevValues) =>
       prevValues.map((prevValue) => ({
-        x: prevValue.x - 640,
+        x: prevValue.x - VIDEO_WIDTH * 2,
       })),
     );
   };
@@ -43,9 +108,9 @@ export function Swipe() {
 
     setCurrentVideoIndex((prevValue) => prevValue - 1);
 
-    setStyles((prevValues) =>
+    setPositions((prevValues) =>
       prevValues.map((prevValue) => ({
-        x: prevValue.x + 640,
+        x: prevValue.x + VIDEO_WIDTH * 2,
       })),
     );
   };
@@ -58,84 +123,16 @@ export function Swipe() {
         ref.current.play();
       } else {
         ref.current.pause();
-        // ref.current.currentTime = 0;
       }
     });
   }, [currentVideoIndex]);
 
-  return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-gray-100">
-      <div className="grid w-full grid-cols-3 px-4">
-        <div></div>
-        <div className="flex justify-center gap-4">
-          <Button
-            onClick={previousVideo}
-            size="icon"
-            disabled={currentVideoIndex === 0}
-          >
-            <ArrowLeft />
-          </Button>
-          <Button
-            onClick={nextVideo}
-            size="icon"
-            disabled={currentVideoIndex === 2}
-          >
-            <ArrowRight />
-          </Button>
-        </div>
-        <div className="flex justify-end">
-          <Link to={`/ogren/${params.id}`}>
-            <Button>
-              Quize Geç
-              <NotebookPen />
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      <div className="flex w-full overflow-x-hidden">
-        <video
-          ref={videoRefs[0]}
-          src="/video1.mp4"
-          style={{
-            translate: styles[0].x,
-            width: videoWidth,
-            height: videoHeight,
-            scale: currentVideoIndex === 0 ? 1 : 0.8,
-          }}
-          className="ease rounded-md bg-black transition-transform"
-          controls
-          controlsList="nofullscreen" // TODO: Bunu böyle yapmak yerine translate'i sıfırlayalım
-        />
-
-        <video
-          ref={videoRefs[1]}
-          src="/video2.mp4"
-          style={{
-            translate: styles[1].x,
-            width: videoWidth,
-            height: videoHeight,
-            scale: currentVideoIndex === 1 ? 1 : 0.8,
-          }}
-          className="ease rounded-md bg-black transition-transform"
-          controls
-          controlsList="nofullscreen"
-        />
-
-        <video
-          ref={videoRefs[2]}
-          src="/video3.mp4"
-          style={{
-            translate: styles[2].x,
-            width: videoWidth,
-            height: videoHeight,
-            scale: currentVideoIndex === 2 ? 1 : 0.8,
-          }}
-          className="ease rounded-md bg-black transition-transform"
-          controls
-          controlsList="nofullscreen"
-        />
-      </div>
-    </main>
-  );
+  return {
+    nextVideo,
+    previousVideo,
+    positions,
+    currentVideoIndex,
+    videoUrls,
+    videoRefs,
+  };
 }

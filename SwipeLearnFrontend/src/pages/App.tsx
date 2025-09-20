@@ -27,7 +27,7 @@ export function App() {
   };
 
   return (
-    <main className="bg-tw-background flex min-h-screen w-full justify-center pt-24">
+    <main className="bg-tw-background flex min-h-screen w-full justify-center pt-20 pb-12">
       <div className="flex w-full flex-col items-center gap-8">
         <div className="flex flex-col gap-4">
           <div className="mx-auto">
@@ -40,12 +40,21 @@ export function App() {
           className="flex w-1/2 flex-col items-center justify-center gap-4"
           onSubmit={methods.handleSubmit(onSubmit)}
         >
-          <Textarea
-            placeholder="İstanbul'un fethi"
-            className="bg-tw-primary h-36"
-            {...methods.register("topic")}
-          />
+          <div className="min-h-36 w-full">
+            <Textarea
+              required
+              placeholder="İstanbul'un fethi"
+              className="bg-tw-primary h-full"
+              {...methods.register("topic")}
+            />
+            {methods.formState.errors.topic && (
+              <p className="mt-1 text-sm text-red-500">
+                {methods.formState.errors.topic.message}
+              </p>
+            )}
+          </div>
           <Button
+            disabled={methods.watch("topic")?.length === 0}
             type="submit"
             className="bg-tw-secondary hover:bg-tw-secondary/90 ml-auto"
             size={"lg"}
