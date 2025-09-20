@@ -54,7 +54,7 @@ export function Quiz() {
   };
 
   return (
-    <main className="bg-tw-background flex min-h-screen w-full flex-col items-center gap-4 pt-20 pb-12">
+    <>
       <div className="mb-14 grid w-full grid-cols-3 items-center px-4">
         <div className="flex justify-start">
           <Link to={`/kaydir/${params.id}`}>
@@ -74,7 +74,7 @@ export function Quiz() {
         <div></div>
       </div>
 
-      <div className="flex w-1/2 justify-between">
+      <div className="my-4 flex w-1/2 justify-between">
         <Button
           disabled={currentIndex === 0}
           onClick={previousQuestion}
@@ -93,13 +93,13 @@ export function Quiz() {
         </Button>
       </div>
 
-      <div className="bg-tw-primary flex h-fit min-h-64 w-1/2 flex-col gap-4 rounded-md p-4 shadow">
+      <div className="bg-tw-primary mb-4 flex h-fit min-h-64 w-1/2 flex-col gap-4 rounded-md p-4 shadow">
         <h1 className="font-semibold">{currentIndex + 1}. Soru</h1>
 
         <p>{currentQuestion.question}</p>
       </div>
 
-      <div className="grid w-2/3 grid-cols-2 gap-4">
+      <div className="space-2 grid w-2/3 grid-cols-2 gap-4">
         {currentQuestion.options.map((option, i) => (
           <button className="bg-tw-primary hover:bg-tw-primary/90 rounded-md p-4 shadow">
             {indexToLetter[i]}) {option}
@@ -108,6 +108,6 @@ export function Quiz() {
       </div>
 
       <TakeNotes />
-    </main>
+    </>
   );
 }
