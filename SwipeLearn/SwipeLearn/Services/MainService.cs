@@ -5,6 +5,7 @@ using System.Text;
 using System.Diagnostics;
 using Xabe.FFmpeg;
 using Xabe.FFmpeg.Downloader;
+using SwipeLearn.Models.ViewModels;
 
 namespace SwipeLearn.Services
 {
@@ -18,16 +19,18 @@ namespace SwipeLearn.Services
             _topicRepository = repository;
             _httpClient = httpClientFactory.CreateClient();
         }
-        public async Task<Guid> CreateTopic(Topic topic)
+        public async Task<TopicGuid> CreateTopic(Topic topic)
         {
-            if (topic == null || topic.Description == null) return (Guid.Empty);
+            if (topic == null || topic.Description == null) return (new TopicGuid());
 
             //var topicExist = await _repository.GetByDescription(topic.Description);
             //if (topicExist != null) return (Guid.Empty, "", new List<string>());
 
             topic.Id = Guid.NewGuid();
             await _topicRepository.AddAsync(topic);
-            return topic.Id;
+            TopicGuid model = new TopicGuid();
+            model.Id = topic.Id;
+            return model;
         }
         public async Task<(Guid id, string text, List<string> urls)> Create(Topic topic)
         {
