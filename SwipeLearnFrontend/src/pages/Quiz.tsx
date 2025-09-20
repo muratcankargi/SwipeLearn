@@ -1,7 +1,9 @@
+import { TakeNotes } from "@/components/take-notes";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, MonitorStop } from "lucide-react";
 import { useState } from "react";
+import { Link, useParams } from "react-router";
 
 type Question = {
   id: number;
@@ -35,6 +37,8 @@ export function Quiz() {
 
   const currentQuestion = questions[currentIndex];
 
+  const params = useParams<{ id: string }>();
+
   const progress = ((currentIndex + 1) * 100) / questions.length;
 
   const nextQuestion = () => {
@@ -50,10 +54,24 @@ export function Quiz() {
   };
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-gray-100">
-      <div className="mb-18 w-1/3">
-        <div className="my-2 flex w-full justify-center">İlerleme</div>
-        <Progress value={progress} className="w-full" />
+    <main className="bg-tw-background flex min-h-screen w-full flex-col items-center gap-4 pt-20 pb-12">
+      <div className="mb-14 grid w-full grid-cols-3 items-center px-4">
+        <div className="flex justify-start">
+          <Link to={`/kaydir/${params.id}`}>
+            <Button className="bg-tw-secondary hover:bg-tw-secondary/90">
+              Videolara Dön
+              <MonitorStop />
+            </Button>
+          </Link>
+        </div>
+        <div>
+          <div className="mb-2 flex w-full justify-center">İlerleme</div>
+          <Progress
+            value={progress}
+            className="[&_[data-slot=progress-indicator]]:bg-tw-secondary w-full"
+          />
+        </div>
+        <div></div>
       </div>
 
       <div className="flex w-1/2 justify-between">
@@ -75,7 +93,7 @@ export function Quiz() {
         </Button>
       </div>
 
-      <div className="flex h-fit min-h-64 w-1/2 flex-col gap-4 rounded-md bg-white p-4 shadow">
+      <div className="bg-tw-primary flex h-fit min-h-64 w-1/2 flex-col gap-4 rounded-md p-4 shadow">
         <h1 className="font-semibold">{currentIndex + 1}. Soru</h1>
 
         <p>{currentQuestion.question}</p>
@@ -83,11 +101,13 @@ export function Quiz() {
 
       <div className="grid w-2/3 grid-cols-2 gap-4">
         {currentQuestion.options.map((option, i) => (
-          <button className="rounded-md bg-white p-4 shadow hover:bg-gray-100">
+          <button className="bg-tw-primary hover:bg-tw-primary/90 rounded-md p-4 shadow">
             {indexToLetter[i]}) {option}
           </button>
         ))}
       </div>
+
+      <TakeNotes />
     </main>
   );
 }

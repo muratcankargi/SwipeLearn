@@ -27,7 +27,7 @@ export function App() {
   };
 
   return (
-    <main className="bg-tw-background flex min-h-screen w-full justify-center pt-24 pb-12">
+    <main className="bg-tw-background flex min-h-screen w-full justify-center pt-20 pb-12">
       <div className="flex w-full flex-col items-center gap-8">
         <div className="flex flex-col gap-4">
           <div className="mx-auto">

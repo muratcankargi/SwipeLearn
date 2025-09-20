@@ -1,3 +1,5 @@
+import { Loading } from "@/components/loading";
+import { TakeNotes } from "@/components/take-notes";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, NotebookPen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -19,29 +21,33 @@ export function Swipe() {
     videoRefs,
   } = useHandleVideoChanges();
 
+  return <Loading />;
+
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-gray-100">
+    <main className="bg-tw-background flex min-h-screen w-full flex-col items-center gap-4 pt-20">
       <div className="grid w-full grid-cols-3 px-4">
-        <div></div>
+        <div className="font-semibold">
+          {currentVideoIndex + 1}/{videoUrls.length}. Video
+        </div>
         <div className="flex justify-center gap-4">
-          <Button
+          <button
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-2 transition-transform hover:scale-110 disabled:opacity-50"
             onClick={previousVideo}
-            size="icon"
             disabled={currentVideoIndex === 0}
           >
-            <ArrowLeft />
-          </Button>
-          <Button
+            <ArrowLeft className="h-7 w-7" />
+          </button>
+          <button
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-2 transition-transform hover:scale-110 disabled:opacity-50"
             onClick={nextVideo}
-            size="icon"
             disabled={currentVideoIndex === videoUrls.length - 1}
           >
-            <ArrowRight />
-          </Button>
+            <ArrowRight className="h-7 w-7" />
+          </button>
         </div>
         <div className="flex justify-end">
           <Link to={`/quiz/${params.id}`}>
-            <Button>
+            <Button className="bg-tw-secondary hover:bg-tw-secondary/90">
               Quize Geç
               <NotebookPen />
             </Button>
@@ -49,7 +55,7 @@ export function Swipe() {
         </div>
       </div>
 
-      <div className="flex w-full overflow-x-hidden">
+      <div className="relative flex w-full overflow-x-hidden">
         {videoUrls.map((videoUrl, i) => (
           <video
             key={videoUrl}
@@ -67,6 +73,8 @@ export function Swipe() {
           />
         ))}
       </div>
+
+      <TakeNotes />
     </main>
   );
 }
