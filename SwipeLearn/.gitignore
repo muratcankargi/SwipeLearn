@@ -54,3 +54,5 @@ TestResults/
 
 # EF Core Migrations (opsiyonel)
 Migrations/
+
+*.exe

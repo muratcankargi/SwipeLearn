@@ -1,11 +1,10 @@
 ﻿using SwipeLearn.Interfaces;
 using SwipeLearn.Models;
-using SwipeLearn.Repositories;
-using static System.Net.WebRequestMethods;
 using System.Text.Json;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
+using System.Diagnostics;
+using Xabe.FFmpeg;
+using Xabe.FFmpeg.Downloader;
 
 namespace SwipeLearn.Services
 {
@@ -28,11 +27,24 @@ namespace SwipeLearn.Services
             if (topicExist != null) return (Guid.Empty, "", new List<string>());
 
             topic.Id = Guid.NewGuid();
-            await _repository.AddAsync(topic);
-            var text = await GetText(topic.Description);
+            //await _repository.AddAsync(topic);
+            topic.Description = "İstanbul'un Fethi";
+            //var text = await GetText(topic.Description);
+            var text = "abc";
+            //var text = "İstanbul'un Fethi, 29 Mayıs 1453 tarihinde gerçekleşmiş, tarihin akışını değiştiren önemli bir olaydır. Osmanlı Padişahı II. Mehmet, şehri kuşatma planları yaparken, tüm dünya bu büyük mücadeleyi merakla izliyordu. Kuşatma sırasında kullanılan devasa toplar, surları aşarak İstanbul'un savunmasını zayıflattı.\n\nFethin en çarpıcı anlarından biri, şehrin surlarının önünde yer alan etkileyici Topkapı Sarayı’dır. Sarayın yüksek ve sağlam surları, bir zamanlar Bizans'ın gücünü simgeliyordu. II. Mehmet’in stratejik liderliği sayesinde, Osmanlı ordusu bu güçlü savunmayı aşmayı başardı. \n\nŞehrin fethi, sadece askeri bir zafer değil, kültürel ve ekonomik bir dönüşümün başlangıcını müjdeliyordu. İstanbul, tüm dünyanın gözdesi haline gelerek, Doğu ile Batı arasında bir köprü işlevi gördü. \n\nSonuç olarak, İstanbul'un Fethi, sadece askeri güç değil, aynı zamanda zeka ve stratejinin de bir zaferiydi. Bu olay, şehirlerin tarihindeki önemli dönüm noktalarından biri olarak günümüzde bile etkisini sürdürmektedir. İstanbul, fetihle birlikte Osmanlı İmparatorluğu’nun kalbi olmuş, tüm dünyanın ilgisini üzerine çekmiştir.";
+            //var image_urls = await GenerateImagesAsync(topic.Description, text);
+            //var voice = SynthesizeToFileAsync(text);
+            //Console.WriteLine(voice);
+            List<string> urls = [Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img01.jpg"),
+               Path.Combine(Directory.GetCurrentDirectory(),"wwwroot", "images", "img02.jpg"),
+             Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img03.jpg"),
+             Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img04.jpg"),
+            ];
+            var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", "elevenlabs_20250920_114819.mp3");
 
-            var image_urls = await GenerateImagesAsync(topic.Description, text);
-            return (topic.Id, text, image_urls);
+            var path = await CreateVideoAsync(urls, audioPath);
+            Console.WriteLine("video path =" + path);
+            return (topic.Id, text, new List<string>());
         }
 
         //topic to text with chatgpt
@@ -48,7 +60,7 @@ namespace SwipeLearn.Services
                 messages = new[]
                 {
                     new { role = "system", content = "You are a helpful teacher." },
-                    new { role = "user", content = "Sana vereceğim konu başlığıyla ilgili olarak, en fazla 5 paragraf olacak şekilde öğretici bir içerik hazırla. Metin, konu başlığını detaylı açıklasın, önemli noktaları vurgulasın ve öğrencilerin kolay anlayabileceği örnekler içersin. Her paragraf mantıklı bir akışa sahip olsun: giriş, gelişme ve sonuç bölümleri olsun. Ayrıca metin, bu konuyla alakalı görsel fikirler için de ilham verebilecek detaylı betimlemeler içersin. Başlık:"+description }
+                    new { role = "user", content = "Sana vereceğim konu başlığıyla ilgili olarak, yaklaşık 1 dakikalık seslendirmeye uygun bir konuşma metni hazırla. Metin toplamda 120–150 kelime civarında olsun ve en fazla 5 paragraftan oluşsun. İçerik öğretici bir üslup taşısın, giriş–gelişme–sonuç akışına sahip olsun ve öğrencilerin kolayca anlayabileceği bir yapı barındırsın. Ayrıca metinde görseller için ilham verebilecek detaylı betimlemeler yer alsın. Çıktıda yalnızca düzgün paragraf yapısında, tamamen Türkçe bir metin üret; gereksiz semboller veya yabancı dil ifadeleri kesinlikle olmasın. Konu başlığı:"+description }
                 }
             };
 
@@ -122,13 +134,122 @@ namespace SwipeLearn.Services
                         .ToList();
                 }
 
-                await Task.Delay(2000); 
+                await Task.Delay(2000);
             }
 
             throw new Exception("Fal.ai images were not ready after waiting.");
         }
 
+        public async Task<string> SynthesizeToFileAsync(string text, string outputFilePath = null, string outputFormat = "mp3_44100_128")
+        {
+            try
+            {
 
+                if (string.IsNullOrWhiteSpace(text)) throw new ArgumentException("text boş olamaz.", nameof(text));
+                string voiceId = "dgeCtiGkvIwzoR09qzjl";
+                var elevenLabsAiApiKey = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY");
+
+                var stopwatch = Stopwatch.StartNew();
+
+                outputFilePath ??= Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", $"elevenlabs_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mp3");
+
+                var endpoint = $"https://api.elevenlabs.io/v1/text-to-speech/{Uri.EscapeDataString(voiceId)}?output_format={Uri.EscapeDataString(outputFormat)}";
+
+                //  voice settings
+                var requestBody = new
+                {
+                    text = text,
+                    model_id = "eleven_multilingual_v2",
+                    language_code = "tr",
+                    use_speaker_boost = true
+
+                };
+                var json = JsonSerializer.Serialize(requestBody);
+                using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                _httpClient.DefaultRequestHeaders.Remove("xi-api-key");
+                _httpClient.DefaultRequestHeaders.Add("xi-api-key", elevenLabsAiApiKey);
+
+                using var response = await _httpClient.PostAsync(endpoint, content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"ElevenLabs TTS isteği başarısız. Status: {response.StatusCode}, Body: {err}");
+                }
+
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                await System.IO.File.WriteAllBytesAsync(outputFilePath, bytes);
+
+                stopwatch.Stop();
+                Console.WriteLine($"ElevenLabs TTS tamamlandı. Dosya: {outputFilePath} - Süre: {stopwatch.ElapsedMilliseconds} ms");
+
+                return outputFilePath;
+
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.ToString();
+            }
+        }
+
+
+
+        public async Task<string> CreateVideoAsync(List<string> imagePaths, string audioPath, string outputPath = null)
+        {
+            if (imagePaths == null || imagePaths.Count == 0)
+                throw new ArgumentException("En az 1 görsel gerekli", nameof(imagePaths));
+            if (string.IsNullOrEmpty(audioPath) || !File.Exists(audioPath))
+                throw new ArgumentException("Ses dosyası bulunamadı", nameof(audioPath));
+
+            outputPath ??= Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "videos",
+                $"output_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mp4");
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+
+            // FFmpeg dosyalarının hazır olduğundan emin ol
+            await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
+
+            // 1. Ses uzunluğunu al
+            var audioInfo = await FFmpeg.GetMediaInfo(audioPath);
+            double audioDuration = audioInfo.Duration.TotalSeconds;
+
+            // 2. Her resim için video klip oluştur (12 saniye örnek)
+            var tempVideos = new List<string>();
+            double perImageDuration = audioDuration / imagePaths.Count;
+
+            for (int i = 0; i < imagePaths.Count; i++)
+            {
+                string tempVideo = Path.Combine(Path.GetTempPath(), $"img_{i}.mp4");
+                tempVideos.Add(tempVideo);
+                Console.WriteLine($"Image {i}: duration={perImageDuration}");
+                await FFmpeg.Conversions.New()
+                    .AddParameter($"-loop 1 -t {perImageDuration.ToString(System.Globalization.CultureInfo.InvariantCulture)} -i \"{imagePaths[i]}\"")
+                    .AddParameter("-c:v libx264 -pix_fmt yuv420p")
+                    .SetOutput(tempVideo)
+                    .Start();
+            }
+
+            // 3. Tüm image videoları birleştir
+            string concatFile = Path.Combine(Path.GetTempPath(), "concat.txt");
+            await File.WriteAllLinesAsync(concatFile, tempVideos.Select(v => $"file '{v.Replace("\\", "/")}'"));
+
+            string tempConcatVideo = Path.Combine(Path.GetTempPath(), "concat_video.mp4");
+            await Task.Delay(200);
+            await FFmpeg.Conversions.New()
+                .AddParameter($"-f concat -safe 0 -i \"{concatFile}\" -c:v libx264 -pix_fmt yuv420p \"{tempConcatVideo}\"")
+                .Start();
+            await Task.Delay(200);
+            // 4. Ses ekle
+            await FFmpeg.Conversions.New()
+                .AddParameter($"-i \"{tempConcatVideo}\" -i \"{audioPath}\" -c:v copy -c:a aac -shortest \"{outputPath}\"")
+                .Start();
+
+            // Geçici dosyaları temizleyebilirsin
+            foreach (var temp in tempVideos.Append(tempConcatVideo))
+                if (File.Exists(temp)) File.Delete(temp);
+
+            return outputPath;
+        }
 
     }
 
