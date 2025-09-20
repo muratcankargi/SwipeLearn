@@ -118,8 +118,8 @@ namespace SwipeLearn.Services
             {
                 try
                 {
-                    await GenerateTextToSpeech(description, topicMaterial);
-                    await GenerateImagesAsync(topic, description);
+                    //await GenerateTextToSpeech(description, topicMaterial);
+                    //await GenerateImagesAsync(topic, description);
                 }
                 catch (Exception ex)
                 {
