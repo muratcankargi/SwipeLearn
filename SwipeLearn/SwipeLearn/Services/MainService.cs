@@ -14,12 +14,15 @@ namespace SwipeLearn.Services
         private readonly HttpClient _httpClient;
         private readonly ITopic _topicRepository;
         private readonly ITopicMaterial _topicMaterialRepository;
+        private readonly IServiceProvider _serviceProvider;
 
-        public MainService(IHttpClientFactory httpClientFactory, ITopic repository, ITopicMaterial topicMaterial)
+
+        public MainService(IHttpClientFactory httpClientFactory, ITopic repository, ITopicMaterial topicMaterial, IServiceProvider serviceProvider)
         {
             _httpClient = httpClientFactory.CreateClient();
             _topicRepository = repository;
             _topicMaterialRepository = topicMaterial;
+            _serviceProvider = serviceProvider;
         }
         public async Task<TopicGuid> CreateTopic(Topic topic)
         {
@@ -36,7 +39,11 @@ namespace SwipeLearn.Services
             {
                 try
                 {
-                    await GetText(topic.Description, model.Id);
+                    using var scope = _serviceProvider.CreateScope();
+                    var scopedService = scope.ServiceProvider.GetRequiredService<MainService>();
+
+                    // GetText çağrısı
+                    await scopedService.GetText(topic.Description, model.Id);
                 }
                 catch (Exception ex)
                 {
