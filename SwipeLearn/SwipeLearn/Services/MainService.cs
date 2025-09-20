@@ -82,7 +82,7 @@ namespace SwipeLearn.Services
         }
 
         //topic to text with chatgpt
-        public async Task<string> GetText(string description, Guid id)
+        public async Task<string> GetText(string topic, Guid id)
         {
             var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
@@ -94,7 +94,7 @@ namespace SwipeLearn.Services
                 messages = new[]
                 {
                     new { role = "system", content = "You are a helpful teacher." },
-                    new { role = "user", content = "Sana vereceğim konu başlığıyla ilgili olarak, yaklaşık 1 dakikalık seslendirmeye uygun bir konuşma metni hazırla. Metin toplamda 120–150 kelime civarında olsun ve en fazla 5 paragraftan oluşsun. İçerik öğretici bir üslup taşısın, giriş–gelişme–sonuç akışına sahip olsun ve öğrencilerin kolayca anlayabileceği bir yapı barındırsın. Ayrıca metinde görseller için ilham verebilecek detaylı betimlemeler yer alsın. Çıktıda yalnızca düzgün paragraf yapısında, tamamen Türkçe bir metin üret; gereksiz semboller veya yabancı dil ifadeleri kesinlikle olmasın. Konu başlığı:"+description }
+                    new { role = "user", content = "Sana vereceğim konu başlığıyla ilgili olarak, yaklaşık 1 dakikalık seslendirmeye uygun bir konuşma metni hazırla. Metin toplamda 120–150 kelime civarında olsun ve en fazla 5 paragraftan oluşsun. İçerik öğretici bir üslup taşısın, giriş–gelişme–sonuç akışına sahip olsun ve öğrencilerin kolayca anlayabileceği bir yapı barındırsın. Ayrıca metinde görseller için ilham verebilecek detaylı betimlemeler yer alsın. Çıktıda yalnızca düzgün paragraf yapısında, tamamen Türkçe bir metin üret; gereksiz semboller veya yabancı dil ifadeleri kesinlikle olmasın. Konu başlığı:"+topic }
                 }
             };
 
@@ -103,18 +103,31 @@ namespace SwipeLearn.Services
 
             // JSON içinden mesajı çıkar
             using var doc = JsonDocument.Parse(resultJson);
-            var message = doc.RootElement
+            var description = doc.RootElement
                 .GetProperty("choices")[0]
                 .GetProperty("message")
                 .GetProperty("content")
                 .GetString();
 
             TopicMaterial topicMaterial = new TopicMaterial();
-            topicMaterial.Description = message;
+            topicMaterial.Description = description;
             topicMaterial.TopicId = id;
             await _topicMaterialRepository.AddAsync(topicMaterial);
-            //  _ = 
-            return message;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await GenerateTextToSpeech(description);
+                    await GenerateImagesAsync(topic, description);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"GenerateTextToSpeech failed: {ex.Message}");
+                }
+            });
+
+            return description;
         }
 
 
@@ -241,7 +254,6 @@ namespace SwipeLearn.Services
                 string voiceId = "dgeCtiGkvIwzoR09qzjl";
                 var elevenLabsAiApiKey = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY");
 
-                var stopwatch = Stopwatch.StartNew();
 
                 outputFilePath ??= Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", $"elevenlabs_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mp3");
 
@@ -273,8 +285,9 @@ namespace SwipeLearn.Services
                 var bytes = await response.Content.ReadAsByteArrayAsync();
                 await System.IO.File.WriteAllBytesAsync(outputFilePath, bytes);
 
-                stopwatch.Stop();
-                Console.WriteLine($"ElevenLabs TTS tamamlandı. Dosya: {outputFilePath} - Süre: {stopwatch.ElapsedMilliseconds} ms");
+
+
+                Console.WriteLine($"ElevenLabs TTS tamamlandı. Dosya: {outputFilePath} ");
 
                 return outputFilePath;
 
@@ -345,9 +358,15 @@ namespace SwipeLearn.Services
 
         public async Task<TopicInfoItem> GetStructuredTopicInfoAsync(Guid id)
         {
-            var topicModel = await _topicMaterialRepository.GetByTopicId(id);
-            if (topicModel == null || string.IsNullOrEmpty(topicModel.Description))
-                return new TopicInfoItem();
+            TopicMaterial? topicModel = null;
+            for (int i = 0; i < 30; i++) // ~30 sn
+            {
+                topicModel = await _topicMaterialRepository.GetByTopicId(id);
+                if (topicModel != null && !string.IsNullOrEmpty(topicModel.Description))
+                    break;
+
+                await Task.Delay(1000); 
+            }
 
             var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
             if (string.IsNullOrEmpty(apiKey))
@@ -367,23 +386,34 @@ namespace SwipeLearn.Services
                 temperature = 0.3
             };
 
-            var response = await httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
-            var json = await response.Content.ReadAsStringAsync();
 
             string? content = null;
-            try
+
+            for (int attempt = 0; attempt < 20; attempt++) // polling: (~20 sn)
             {
-                content = JsonDocument.Parse(json)
-                    .RootElement
-                    .GetProperty("choices")[0]
-                    .GetProperty("message")
-                    .GetProperty("content")
-                    .GetString();
+                var response = await httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
+                var json = await response.Content.ReadAsStringAsync();
+
+                try
+                {
+                    content = JsonDocument.Parse(json)
+                        .RootElement
+                        .GetProperty("choices")[0]
+                        .GetProperty("message")
+                        .GetProperty("content")
+                        .GetString();
+                }
+                catch
+                {
+                    content = null;
+                }
+
+                if (!string.IsNullOrEmpty(content))
+                    break;
+
+                await Task.Delay(1000);
             }
-            catch
-            {
-                content = null;
-            }
+
 
             if (string.IsNullOrEmpty(content))
                 return new TopicInfoItem();
