@@ -26,18 +26,17 @@ builder.Services.AddSingleton(new OpenAIClient(AI_API_KEY));
 
 builder.Services.AddHttpClient();
 
-
-var app = builder.Build();
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // frontend adresi
+        policy.WithOrigins("http://localhost:5173") // frontend
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
+
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
