@@ -34,7 +34,7 @@ namespace SwipeLearn.Controllers
         public async Task<IActionResult> GetShortInfo([FromQuery] Guid id)
         {
             TopicInfoItem arr = await _service.GetStructuredTopicInfoAsync(id);
-            if (arr == new TopicInfoItem()) return NotFound();
+            if (arr == null) return NotFound();
             return Ok(arr);
         }
     }

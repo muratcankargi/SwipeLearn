@@ -118,7 +118,7 @@ namespace SwipeLearn.Services
             {
                 try
                 {
-                    await GenerateTextToSpeech(description);
+                    await GenerateTextToSpeech(description, topicMaterial);
                     await GenerateImagesAsync(topic, description);
                 }
                 catch (Exception ex)
@@ -245,7 +245,7 @@ namespace SwipeLearn.Services
         }
 
 
-        public async Task<string> GenerateTextToSpeech(string text, string outputFilePath = null, string outputFormat = "mp3_44100_128")
+        public async Task<string> GenerateTextToSpeech(string text, TopicMaterial topicMaterial, string outputFilePath = null, string outputFormat = "mp3_44100_128")
         {
             try
             {
@@ -285,7 +285,9 @@ namespace SwipeLearn.Services
                 var bytes = await response.Content.ReadAsByteArrayAsync();
                 await System.IO.File.WriteAllBytesAsync(outputFilePath, bytes);
 
+                topicMaterial.Voice.Add(outputFilePath);
 
+                await _topicMaterialRepository.UpdateAsync(topicMaterial);
 
                 Console.WriteLine($"ElevenLabs TTS tamamlandı. Dosya: {outputFilePath} ");
 
@@ -359,14 +361,11 @@ namespace SwipeLearn.Services
         public async Task<TopicInfoItem> GetStructuredTopicInfoAsync(Guid id)
         {
             TopicMaterial? topicModel = null;
-            for (int i = 0; i < 30; i++) // ~30 sn
-            {
-                topicModel = await _topicMaterialRepository.GetByTopicId(id);
-                if (topicModel != null && !string.IsNullOrEmpty(topicModel.Description))
-                    break;
+            topicModel = await _topicMaterialRepository.GetByTopicId(id);
 
-                await Task.Delay(1000); 
-            }
+            if (topicModel == null || string.IsNullOrEmpty(topicModel.Description))
+                return null;
+
 
             var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
             if (string.IsNullOrEmpty(apiKey))
@@ -389,34 +388,25 @@ namespace SwipeLearn.Services
 
             string? content = null;
 
-            for (int attempt = 0; attempt < 20; attempt++) // polling: (~20 sn)
+            var response = await httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
+            var json = await response.Content.ReadAsStringAsync();
+
+            try
             {
-                var response = await httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
-                var json = await response.Content.ReadAsStringAsync();
-
-                try
-                {
-                    content = JsonDocument.Parse(json)
-                        .RootElement
-                        .GetProperty("choices")[0]
-                        .GetProperty("message")
-                        .GetProperty("content")
-                        .GetString();
-                }
-                catch
-                {
-                    content = null;
-                }
-
-                if (!string.IsNullOrEmpty(content))
-                    break;
-
-                await Task.Delay(1000);
+                content = JsonDocument.Parse(json)
+                    .RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+            }
+            catch
+            {
+                content = null;
             }
 
-
             if (string.IsNullOrEmpty(content))
-                return new TopicInfoItem();
+                return null;
 
             // Markdown veya code block temizleme
             content = content.Trim();
@@ -445,7 +435,7 @@ namespace SwipeLearn.Services
             }
 
             if (points == null || points.Count == 0)
-                return new TopicInfoItem();
+                return null;
 
             return new TopicInfoItem()
             {
