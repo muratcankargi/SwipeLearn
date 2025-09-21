@@ -17,6 +17,8 @@ namespace SwipeLearn.Interfaces
         Task DeleteAsync(Guid id);
         Task<List<Question>> GetQuestionsByTopicIdAsync(Guid topicId);
         Task<List<Question>> GetQuestionsByTopicIdAsyncOrderById(Guid topicId);
+        Task<Question?> GetByTopicAndIndexAsync(Guid topicId, int questionIndex);
+
 
     }
 }

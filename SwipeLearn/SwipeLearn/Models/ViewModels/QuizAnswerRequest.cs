@@ -12,4 +12,9 @@
         public int CorrectOptionIndex { get; set; }
     }
 
+    public class QuizDescriptionAnswerResponse
+    {
+        public string Description { get; set; }
+    }
+
 }
