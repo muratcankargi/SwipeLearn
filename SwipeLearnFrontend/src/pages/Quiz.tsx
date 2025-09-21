@@ -110,7 +110,7 @@ export function Quiz() {
   return (
     <>
       {!endQuiz && (
-        <div className="mb-14 grid w-full grid-cols-3 items-center px-4">
+        <div className="mt-24 mb-14 grid w-full items-center gap-4 px-4 sm:mt-0 sm:grid-cols-3">
           <div className="flex justify-start">
             <Link to={`/kaydir/${params.id}`}>
               <Button className="bg-tw-secondary hover:bg-tw-secondary/90">
@@ -127,7 +127,7 @@ export function Quiz() {
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex sm:justify-end">
             <Button
               onClick={() => setEndQuiz(true)}
               className="bg-tw-secondary hover:bg-tw-secondary/90"
@@ -140,7 +140,7 @@ export function Quiz() {
       )}
 
       {!endQuiz && (
-        <div className="my-4 flex w-1/2 justify-between">
+        <div className="my-4 flex w-full justify-between px-4 sm:w-1/2">
           <Button
             disabled={currentIndex === 0}
             onClick={previousQuestion}
@@ -161,7 +161,7 @@ export function Quiz() {
       )}
 
       {!endQuiz && (
-        <div className="bg-tw-primary mb-4 flex h-fit min-h-64 w-1/2 flex-col gap-4 rounded-md p-4 shadow">
+        <div className="bg-tw-primary mb-4 flex h-fit min-h-64 w-[90%] flex-col gap-4 rounded-md p-4 shadow sm:w-1/2">
           <h1 className="font-semibold">{currentIndex + 1}. Soru</h1>
 
           <p>{currentQuestion.question}</p>
@@ -169,7 +169,7 @@ export function Quiz() {
       )}
 
       {!endQuiz && (
-        <div className="space-2 grid w-2/3 grid-cols-2 gap-4">
+        <div className="space-2 mb-24 grid w-2/3 grid-cols-1 gap-4 sm:mb-0 sm:grid-cols-2">
           {currentQuestion.options?.map((option, i) => {
             const answer = answers.find(
               (answer) => answer.questionIndex === currentIndex,

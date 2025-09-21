@@ -16,7 +16,7 @@ export function Swipe({ videoUrls }: { videoUrls: string[] }) {
 
   return (
     <>
-      <div className="my-4 grid w-full grid-cols-3 px-4">
+      <div className="my-4 mt-24 grid w-full grid-cols-3 px-4 sm:mt-0">
         <Link className="flex items-center gap-x-2" to={`/`}>
           <ArrowLeft className="mt-1" />
           Ana Sayfaya Dön
@@ -48,7 +48,7 @@ export function Swipe({ videoUrls }: { videoUrls: string[] }) {
         </div>
       </div>
 
-      <div className="relative flex w-full overflow-x-hidden">
+      <div className="relative mb-24 flex w-full overflow-x-hidden sm:mb-0">
         {videoUrls.map((videoUrl, i) => (
           <video
             key={videoUrl}
