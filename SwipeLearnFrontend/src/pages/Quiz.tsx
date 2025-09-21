@@ -100,7 +100,7 @@ export function Quiz() {
   const isAnsweredIncorrectly = answers.find(
     (answer) =>
       answer.questionIndex === currentIndex &&
-      answer.correctOptionIndex &&
+      typeof answer.correctOptionIndex === "number" &&
       answer.correctOptionIndex !== answer.optionIndex,
   );
 

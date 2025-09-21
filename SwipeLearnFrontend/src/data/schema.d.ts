@@ -453,6 +453,7 @@ export interface components {
         };
         VideoUrls: {
             videoUrls?: string[] | null;
+            descriptions?: string[] | null;
         };
     };
     responses: never;

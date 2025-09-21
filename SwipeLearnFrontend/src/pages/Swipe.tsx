@@ -1,4 +1,5 @@
 import { TakeNotes } from "@/components/take-notes";
+import { Transcript } from "@/components/transcript";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, NotebookPen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -8,7 +9,13 @@ const CENTER_OF_SCREEN = window.innerWidth / 2 - 160;
 const VIDEO_WIDTH = 320;
 const VIDEO_HEIGHT = 600;
 
-export function Swipe({ videoUrls }: { videoUrls: string[] }) {
+export function Swipe({
+  videoUrls,
+  transcripts,
+}: {
+  videoUrls: string[];
+  transcripts: string[];
+}) {
   const params = useParams<{ id: string }>();
 
   const { nextVideo, previousVideo, currentVideoIndex, positions, videoRefs } =
@@ -53,7 +60,7 @@ export function Swipe({ videoUrls }: { videoUrls: string[] }) {
           <video
             key={videoUrl}
             ref={videoRefs[i]}
-            src={`${import.meta.env.VITE_BACKEND_URL}${videoUrl}`}
+            src={`${import.meta.env.VITE_BACKEND_URL}/videos/${videoUrl}`}
             style={{
               translate: positions[i].x,
               width: VIDEO_WIDTH,
@@ -65,6 +72,10 @@ export function Swipe({ videoUrls }: { videoUrls: string[] }) {
             controlsList="nofullscreen" // TODO: Bunu böyle yapmak yerine translate'i sıfırlayalım
           />
         ))}
+
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 sm:static sm:translate-x-0">
+          <Transcript transcript={transcripts[currentVideoIndex]} />
+        </div>
       </div>
 
       <TakeNotes />

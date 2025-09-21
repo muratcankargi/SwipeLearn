@@ -12,5 +12,10 @@ export function SwipeDataFetch() {
   if (!videoQuery.data?.videoUrls || videoQuery.isError)
     return <div>Bir şeyler ters gitti.</div>;
 
-  return <Swipe videoUrls={videoQuery.data.videoUrls} />;
+  return (
+    <Swipe
+      videoUrls={videoQuery.data.videoUrls}
+      transcripts={videoQuery.data.descriptions ?? []}
+    />
+  );
 }
