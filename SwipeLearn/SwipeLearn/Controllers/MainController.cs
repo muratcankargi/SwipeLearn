@@ -4,6 +4,7 @@ using SwipeLearn.Context;
 using SwipeLearn.Models;
 using SwipeLearn.Models.ViewModels;
 using SwipeLearn.Services;
+using SwipeLearn.Utils;
 using System.Net;
 
 namespace SwipeLearn.Controllers
@@ -65,8 +66,9 @@ namespace SwipeLearn.Controllers
             var quiz = await _service.GetQuizByTopicIdAsync(id);
             if (quiz.Questions.Count == 0)
                 return NotFound();
-
-            return Ok(quiz);
+            if (quiz.Questions.Count == 3)
+                return Ok(quiz);
+            return BadRequest();
         }
 
         [HttpPost("quiz")]
@@ -78,5 +80,14 @@ namespace SwipeLearn.Controllers
             if (result.CorrectOptionIndex == -1) return StatusCode(500, new { error = "Something went wrong." });
             return Ok(result);
         }
+
+        [HttpGet("/api/explore")]
+        [ProducesResponseType(typeof(ListPagination<Topic>), StatusCodes.Status200OK)]
+        public async Task<ActionResult> GetTopics()
+        {
+            var topics = await _service.GetTopics();
+            return Ok(topics);
+        }
+
     }
 }

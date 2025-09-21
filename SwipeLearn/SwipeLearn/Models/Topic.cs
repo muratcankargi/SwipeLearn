@@ -13,10 +13,12 @@ namespace SwipeLearn.Models
         [Required]
         [Column("description")]
         [MaxLength(255)]
-        public string Description { get; set; } = "istanbulun fethi";
+        public string Description { get; set; } = String.Empty;
 
         // Navigation Properties
-        //public ICollection<Video> Videos { get; set; } = new List<Video>();
-        //public ICollection<Question> Questions { get; set; } = new List<Question>();
+        public ICollection<Video> Videos { get; set; } = new List<Video>();
+        public ICollection<Question> Questions { get; set; } = new List<Question>();
+        public ICollection<TopicMaterial> TopicMaterials { get; set; } = new List<TopicMaterial>();
+
     }
 }

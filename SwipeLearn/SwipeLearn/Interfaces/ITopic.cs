@@ -1,4 +1,5 @@
 ﻿using SwipeLearn.Models;
+using SwipeLearn.Models.ViewModels;
 using SwipeLearn.Repositories;
 using SwipeLearn.Utils;
 using System.Linq.Expressions;
@@ -16,5 +17,10 @@ namespace SwipeLearn.Interfaces
         Task UpdateAsync(Topic entity);
         Task DeleteAsync(Guid id);
         Task<Topic> GetByDescription(string description);
+        Task<ListPagination<TopicResponseDto>> GetAll(
+                    Expression<Func<Topic, bool>> filter = null,
+                    Expression<Func<IQueryable<Topic>, IOrderedQueryable<Topic>>> orderBy = null,
+                    string includeProperties = "",
+                    PagingInfo pagingInfo = null);
     }
 }

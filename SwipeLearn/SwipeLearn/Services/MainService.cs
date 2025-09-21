@@ -165,7 +165,7 @@ namespace SwipeLearn.Services
                         var scopedService = videoScope.ServiceProvider.GetRequiredService<MainService>();
 
                         // Artık her metod kendi scope içinde çalışıyor
-                       // await scopedService.GenerateTextToSpeech(part, id);
+                        // await scopedService.GenerateTextToSpeech(part, id);
                         await scopedService.GenerateAndSaveImagesAsync(id, topic, part);
                         await scopedService.CreateVideosAsync(id, index);
 
@@ -705,7 +705,11 @@ namespace SwipeLearn.Services
             return new QuizAnswerResponse { CorrectOptionIndex = index };
         }
 
-
+        public async Task<ListPagination<TopicResponseDto>> GetTopics()
+        {
+            var topics = await _topicRepository.GetAll();
+            return topics;
+        }
 
     }
 }
