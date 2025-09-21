@@ -4,7 +4,13 @@ import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { Progress } from "@/components/ui/progress";
 import { useGetTopicQuiz, usePostTopicQuiz } from "@/data/query";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ArrowRight, MonitorStop } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ExternalLink,
+  MonitorStop,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
@@ -38,6 +44,9 @@ export function Quiz() {
     }[]
   >([]);
 
+  const [endQuiz, setEndQuiz] = useState(false);
+  const [correctQuestionsCount, setCorrectQuestionsCount] = useState(0);
+
   const nextQuestion = () => {
     if (currentIndex + 1 === questions.length) return;
 
@@ -63,18 +72,19 @@ export function Quiz() {
       },
       {
         onSuccess: (data) => {
+          if (optionIndex === data?.correctOptionIndex) {
+            setTimeout(() => nextQuestion(), 300);
+            setCorrectQuestionsCount((prevValue) => prevValue + 1);
+          }
+
           setAnswers((prevValues) => [
             ...prevValues,
             {
               questionIndex: currentIndex,
               optionIndex: optionIndex,
-              correctOptionIndex: data.isCorrect ? optionIndex : undefined, // burası değişecek
+              correctOptionIndex: data?.correctOptionIndex,
             },
           ]);
-
-          if (!data.isCorrect) {
-            toast.info("Yanlış cevap.");
-          }
         },
         onError: () => {
           toast.error("Bir şeyler ters gitti.");
@@ -83,79 +93,135 @@ export function Quiz() {
     );
   };
 
+  const repeatQuiz = () => {
+    setAnswers([]);
+    setCorrectQuestionsCount(0);
+    setCurrentIndex(0);
+    setEndQuiz(false);
+  };
+
   if (questionsQuery.isLoading) return <LoadingIndicator />;
   if (questionsQuery.isError || !questionsQuery.data?.questions)
     return <div>Bir şeyler ters gitti.</div>;
 
   return (
     <>
-      <div className="mb-14 grid w-full grid-cols-3 items-center px-4">
-        <div className="flex justify-start">
-          <Link to={`/kaydir/${params.id}`}>
-            <Button className="bg-tw-secondary hover:bg-tw-secondary/90">
-              Videolara Dön
-              <MonitorStop />
+      {!endQuiz && (
+        <div className="mb-14 grid w-full grid-cols-3 items-center px-4">
+          <div className="flex justify-start">
+            <Link to={`/kaydir/${params.id}`}>
+              <Button className="bg-tw-secondary hover:bg-tw-secondary/90">
+                Videolara Dön
+                <MonitorStop />
+              </Button>
+            </Link>
+          </div>
+          <div>
+            <div className="mb-2 flex w-full justify-center">İlerleme</div>
+            <Progress
+              value={progress}
+              className="[&_[data-slot=progress-indicator]]:bg-tw-secondary w-full"
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setEndQuiz(true)}
+              className="bg-tw-secondary hover:bg-tw-secondary/90"
+            >
+              Quizi Bitir
+              <Check />
             </Button>
-          </Link>
+          </div>
         </div>
-        <div>
-          <div className="mb-2 flex w-full justify-center">İlerleme</div>
-          <Progress
-            value={progress}
-            className="[&_[data-slot=progress-indicator]]:bg-tw-secondary w-full"
-          />
-        </div>
-        <div></div>
-      </div>
+      )}
 
-      <div className="my-4 flex w-1/2 justify-between">
-        <Button
-          disabled={currentIndex === 0}
-          onClick={previousQuestion}
-          size={"sm"}
-        >
-          <ArrowLeft />
-          Önceki Soru
-        </Button>
-        <Button
-          disabled={currentIndex + 1 === questions.length}
-          onClick={nextQuestion}
-          size={"sm"}
-        >
-          Sonraki Soru
-          <ArrowRight />
-        </Button>
-      </div>
-
-      <div className="bg-tw-primary mb-4 flex h-fit min-h-64 w-1/2 flex-col gap-4 rounded-md p-4 shadow">
-        <h1 className="font-semibold">{currentIndex + 1}. Soru</h1>
-
-        <p>{currentQuestion.question}</p>
-      </div>
-
-      <div className="space-2 grid w-2/3 grid-cols-2 gap-4">
-        {currentQuestion.options?.map((option, i) => (
-          <button
-            key={`${currentIndex}-${i}`}
-            disabled={
-              !!answers.find((answer) => answer.questionIndex === currentIndex)
-            }
-            onClick={() => handleOptionClick(i)}
-            className={cn(
-              "bg-tw-primary hover:bg-tw-primary/90 rounded-md p-4 shadow transition-colors",
-              {
-                "hover:bg-tw-green-400/90 bg-green-400": answers.find(
-                  (answer) =>
-                    answer.questionIndex === currentIndex &&
-                    answer.correctOptionIndex === i,
-                ),
-              },
-            )}
+      {!endQuiz && (
+        <div className="my-4 flex w-1/2 justify-between">
+          <Button
+            disabled={currentIndex === 0}
+            onClick={previousQuestion}
+            size={"sm"}
           >
-            {indexToLetter[i]}) {option}
-          </button>
-        ))}
-      </div>
+            <ArrowLeft />
+            Önceki Soru
+          </Button>
+          <Button
+            disabled={currentIndex + 1 === questions.length}
+            onClick={nextQuestion}
+            size={"sm"}
+          >
+            Sonraki Soru
+            <ArrowRight />
+          </Button>
+        </div>
+      )}
+
+      {!endQuiz && (
+        <div className="bg-tw-primary mb-4 flex h-fit min-h-64 w-1/2 flex-col gap-4 rounded-md p-4 shadow">
+          <h1 className="font-semibold">{currentIndex + 1}. Soru</h1>
+
+          <p>{currentQuestion.question}</p>
+        </div>
+      )}
+
+      {!endQuiz && (
+        <div className="space-2 grid w-2/3 grid-cols-2 gap-4">
+          {currentQuestion.options?.map((option, i) => {
+            const answer = answers.find(
+              (answer) => answer.questionIndex === currentIndex,
+            );
+
+            return (
+              <button
+                key={`${currentIndex}-${i}`}
+                disabled={
+                  !!answers.find(
+                    (answer) => answer.questionIndex === currentIndex,
+                  )
+                }
+                onClick={() => handleOptionClick(i)}
+                className={cn(
+                  "bg-tw-primary hover:bg-tw-primary/90 rounded-md p-4 shadow transition-colors",
+                  {
+                    "bg-green-400 hover:bg-green-400":
+                      answer && answer?.correctOptionIndex === i,
+                    "bg-red-400 hover:bg-red-400":
+                      answer && answer.correctOptionIndex !== i,
+                  },
+                )}
+              >
+                {indexToLetter[i]}) {option}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {endQuiz && (
+        <div className="flex flex-col gap-6">
+          <h1 className="text-center text-2xl font-bold">
+            Toplam {questions.length} sorudan {correctQuestionsCount} doğru
+            bildiniz.
+          </h1>
+
+          <div className="flex flex-col items-center gap-2">
+            <Link to={"/"}>
+              <Button
+                onClick={() => setEndQuiz(true)}
+                className="bg-tw-secondary hover:bg-tw-secondary/90 w-fit"
+              >
+                Yeni bir konu öğren
+                <ExternalLink />
+              </Button>
+            </Link>
+
+            <Button variant={"ghost"} onClick={repeatQuiz}>
+              Quizi Tekrarla
+            </Button>
+          </div>
+        </div>
+      )}
 
       <TakeNotes />
     </>

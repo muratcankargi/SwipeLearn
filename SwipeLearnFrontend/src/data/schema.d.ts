@@ -255,6 +255,17 @@ export interface paths {
                         "text/json": components["schemas"]["QuizAnswerResponse"];
                     };
                 };
+                /** @description Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": string;
+                        "application/json": string;
+                        "text/json": string;
+                    };
+                };
             };
         };
         delete?: never;
@@ -289,7 +300,8 @@ export interface components {
             optionIndex?: number;
         };
         QuizAnswerResponse: {
-            isCorrect?: boolean;
+            /** Format: int32 */
+            correctOptionIndex?: number;
         };
         QuizItem: {
             question?: string | null;

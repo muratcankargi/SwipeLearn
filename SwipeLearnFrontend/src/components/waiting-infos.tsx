@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { LoadingIndicator } from "./ui/loading-indicator";
 
-const DEFAULT_TIMER = 20;
+const DEFAULT_TIMER = 10;
 
 export function WaitingInfos() {
   const params = useParams<{ id: string }>();
