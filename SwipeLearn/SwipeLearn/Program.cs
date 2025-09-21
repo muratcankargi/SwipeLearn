@@ -52,6 +52,8 @@ app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 
+app.UseStaticFiles(); // Burda sadece videos klasörünü mü ayarlasak ??
+
 app.UseAuthorization();
 
 app.MapControllers();

@@ -40,12 +40,12 @@ namespace SwipeLearn.Controllers
         }
 
         [HttpGet("is-videos-ready")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(IsReady), StatusCodes.Status200OK)]
         public async Task<IActionResult> IsVideosReady([FromQuery] Guid id)
         {
             bool isReady = await _service.IsVideosReady(id);
-            return isReady ? Ok(isReady) : NotFound(isReady);
+            return Ok(new { isReady = isReady }); // Burda NotFound göndermeyelim çünkü ben zaten polling ile 10 sn de bir bakıyorum
+            // error gelirse anında tekrar kontrol ediyor frontend o kadar kontrole gerek yok
         }
 
         [HttpGet("/api/video")]

@@ -399,6 +399,7 @@ namespace SwipeLearn.Services
             return createdVideos;
         }
 
+        // Bu çok uzun sürüyor acaba description'u oluşturmadan mı oluştursak infoları
         public async Task<TopicInfoItem> GetStructuredTopicInfoAsync(Guid id)
         {
             TopicMaterial? topicModel = null;
@@ -495,8 +496,8 @@ namespace SwipeLearn.Services
                 return null;
 
             var fullPaths = videoUrlPaths
-                .Select(path => Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "videos", path))
-                .ToList();
+                .Select(path => Path.Combine("videos", path))
+                .ToList(); // Düzenledim
 
             return new VideoUrls
             {
@@ -620,6 +621,7 @@ namespace SwipeLearn.Services
             return response;
         }
 
+       // Böyle olunca kullanıcı yanlış şıkkı işaretleyince doğrusunu gösteremiyoruz
         public async Task<QuizAnswerResponse> CheckAnswerAsync(QuizAnswerRequest request)
         {
             var questions = await _questionRepository.GetQuestionsByTopicIdAsync(request.Id);
