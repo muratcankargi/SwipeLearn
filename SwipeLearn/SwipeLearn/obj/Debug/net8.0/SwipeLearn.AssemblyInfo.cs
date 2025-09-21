@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SwipeLearn")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+12756e6a332ac912571d924c1b58c78d3bc4e866")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d789fd79cf78b3967e2b64f570ca1e30529de94f")]
 [assembly: System.Reflection.AssemblyProductAttribute("SwipeLearn")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SwipeLearn")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

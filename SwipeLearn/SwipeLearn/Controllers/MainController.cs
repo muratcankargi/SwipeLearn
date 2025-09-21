@@ -66,9 +66,8 @@ namespace SwipeLearn.Controllers
             var quiz = await _service.GetQuizByTopicIdAsync(id);
             if (quiz.Questions.Count == 0)
                 return NotFound();
-            if (quiz.Questions.Count == 3)
-                return Ok(quiz);
-            return BadRequest();
+
+            return Ok(quiz);
         }
 
         [HttpPost("quiz")]
