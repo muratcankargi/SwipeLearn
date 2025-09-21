@@ -193,7 +193,7 @@ namespace SwipeLearn.Services
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Key {falAiApiKey}");
 
-            var tasks = Enumerable.Range(0, 12).Select(_ => GenerateAndSaveSingleImageAsync(prompt)).ToList();
+            var tasks = Enumerable.Range(0, 4).Select(_ => GenerateAndSaveSingleImageAsync(prompt)).ToList();
             var results = await Task.WhenAll(tasks);
 
             return results.ToList();
