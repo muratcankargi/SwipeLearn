@@ -63,7 +63,7 @@ namespace SwipeLearn.Services
         }
 
         //topic to text with chatgpt
-        public async Task<string> GetText(string topic, Guid id)
+        public async Task<List<string>> GetText(string topic, Guid id)
         {
             var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
@@ -74,9 +74,15 @@ namespace SwipeLearn.Services
                 model = "gpt-4o-mini",
                 messages = new[]
                 {
-                    new { role = "system", content = "You are a helpful teacher." },
-                    new { role = "user", content = "Sana vereceğim konu başlığıyla ilgili olarak, yaklaşık 1 dakikalık seslendirmeye uygun bir konuşma metni hazırla. Metin toplamda 120–150 kelime civarında olsun ve en fazla 5 paragraftan oluşsun. İçerik öğretici bir üslup taşısın, giriş–gelişme–sonuç akışına sahip olsun ve öğrencilerin kolayca anlayabileceği bir yapı barındırsın. Ayrıca metinde görseller için ilham verebilecek detaylı betimlemeler yer alsın. Çıktıda yalnızca düzgün paragraf yapısında, tamamen Türkçe bir metin üret; gereksiz semboller veya yabancı dil ifadeleri kesinlikle olmasın. Konu başlığı:"+topic }
-                }
+            new { role = "system", content = "You are a helpful teacher." },
+            new { role = "user", content =
+                $"Vereceğin çıktı bu formata uygun olmalı : ['string',...] sadece bir array döndür başka hiçbir şey döndürme." +
+                $"Sana vereceğim konu başlığıyla ilgili olarak, yaklaşık 1-3 dakikalık seslendirmeye uygun bir konuşma metni hazırla. " +
+                "Metin toplamda 120-150 kelime civarında paragraflardan oluşsun, 3 parçaya bölünebilir şekilde mantıklı bölümlere ayır. " +
+                "Her parça, tek bir videoya uygun uzunlukta olmalı. İçerik öğretici bir üslup taşısın, giriş–gelişme–sonuç akışına sahip olsun. " +
+                $"Konu başlığı: {topic}" }
+        },
+                temperature = 0.4
             };
 
             var response = await _httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
@@ -84,47 +90,93 @@ namespace SwipeLearn.Services
 
             // JSON içinden mesajı çıkar
             using var doc = JsonDocument.Parse(resultJson);
-            var description = doc.RootElement
+            var fullText = doc.RootElement
                 .GetProperty("choices")[0]
                 .GetProperty("message")
                 .GetProperty("content")
                 .GetString();
 
-            TopicMaterial topicMaterial = new TopicMaterial();
-            topicMaterial.Description = description;
-            topicMaterial.TopicId = id;
+            // Metni parçalara böl
+            var paragraphs = fullText?.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+            var parts = new List<string>();
+
+            //int totalParagraphs = paragraphs.Length;
+            //if (totalParagraphs <= 3)
+            //{
+            //    parts.AddRange(paragraphs);
+            //}
+            //else
+            //{
+            //    int chunkSize = (int)Math.Ceiling(totalParagraphs / 3.0);
+            //    for (int i = 0; i < totalParagraphs; i += chunkSize)
+            //    {
+            //        var part = string.Join("\n\n", paragraphs.Skip(i).Take(chunkSize));
+            //        parts.Add(part);
+            //    }
+            //}
+
+            // TopicMaterial oluştur ve kaydet (Description artık List<string>)
+            TopicMaterial topicMaterial = new TopicMaterial
+            {
+                TopicId = id,
+                Description = paragraphs
+            };
             await _topicMaterialRepository.AddAsync(topicMaterial);
 
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
-                    var scopedService = scope.ServiceProvider.GetRequiredService<MainService>();
-                    Console.WriteLine("Question Oluşturma Başladı");
-                    scopedService.GenerateAndSaveQuestionsAsync(id, description);
-                    Console.WriteLine("Question Oluşturma Bitti");
+            // PostProcessing başlat
+            _ = Task.Run(() => StartPostProcessingAsync(id, topic, parts));
 
-                    Console.WriteLine("Ses Oluşturma Başladı");
-                    await scopedService.GenerateTextToSpeech(description, id);
-                    Console.WriteLine("Ses Oluşturma Bitti");
-                    Console.WriteLine("Resim Oluşturma Başladı");
-                    await scopedService.GenerateAndSaveImagesAsync(id, topic, description);
-                    Console.WriteLine("Resim Oluşturma Bitti");
-
-                    Console.WriteLine("Video Oluşturma Başladı");
-                    await scopedService.CreateVideosAsync(id);
-                    Console.WriteLine("Video Oluşturma Bitti");
-
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"GenerateTextToSpeech failed: {ex.Message}");
-                }
-            });
-
-            return description;
+            return parts;
         }
+
+
+        private async Task StartPostProcessingAsync(Guid id, string topic, List<string> descriptionParts)
+        {
+            try
+            {
+                Console.WriteLine("Question Oluşturma Başladı");
+
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    var scopedService = scope.ServiceProvider.GetRequiredService<MainService>();
+                    await scopedService.GenerateAndSaveQuestionsAsync(id, string.Join("\n\n", descriptionParts));
+                }
+
+                Console.WriteLine("Question Oluşturma Bitti");
+
+                // Videoları sırayla oluştur
+                for (int index = 0; index < descriptionParts.Count; index++)
+                {
+                    var part = descriptionParts[index];
+
+                    using var videoScope = _scopeFactory.CreateScope();
+                    var scopedService = videoScope.ServiceProvider.GetRequiredService<MainService>();
+
+                    Console.WriteLine($"Video {index + 1} için ses ve resim işlemleri başlıyor");
+
+                    try
+                    {
+                        await scopedService.GenerateTextToSpeech(part, id);
+                        await scopedService.GenerateAndSaveImagesAsync(id, topic, part);
+
+
+                        await scopedService.CreateVideosAsync(id); // Video oluşturma
+
+                        Console.WriteLine($"Video {index + 1} işlemi tamamlandı");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Video {index + 1} işlemi başarısız: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"PostProcessing failed: {ex.Message}");
+            }
+        }
+
+
 
 
         public async Task<string> GetImagePromptText(string description)

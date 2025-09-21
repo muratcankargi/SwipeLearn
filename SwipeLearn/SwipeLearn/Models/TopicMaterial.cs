@@ -13,8 +13,8 @@ namespace SwipeLearn.Models
         [Column("topic_id")]
         public Guid TopicId { get; set; }
 
-        [Column("description")]
-        public string? Description { get; set; }
+        [Column("description", TypeName = "text[]")]
+        public List<string>? Description { get; set; }
 
         [Column("images")]
         public List<string>? Images { get; set; }
