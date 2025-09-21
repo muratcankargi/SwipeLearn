@@ -335,7 +335,7 @@ namespace SwipeLearn.Services
             for (int i = 0; i < groupCount; i++)
             {
                 var imageGroup = topic.Images.Skip(i * 4).Take(4).ToList();
-                var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", topic.Voice[i]); 
+                var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", topic.Voice[i]);
 
                 if (imageGroup.Count == 0 || string.IsNullOrEmpty(audioPath))
                     continue;
@@ -480,6 +480,10 @@ namespace SwipeLearn.Services
             };
         }
 
+        public async Task<bool> IsVideosReady(Guid topic_id)
+        {
+            return await _videoRepository.GetByTopicId(topic_id) == null ? false : true;
+        }
 
     }
 }

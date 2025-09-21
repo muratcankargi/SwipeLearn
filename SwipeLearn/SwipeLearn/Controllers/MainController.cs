@@ -27,7 +27,7 @@ namespace SwipeLearn.Controllers
 
             return Ok(guid);
         }
-        
+
         [HttpGet("short-info")]
         [ProducesResponseType(typeof(TopicInfoItem), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -38,6 +38,13 @@ namespace SwipeLearn.Controllers
             return Ok(arr);
         }
 
-       
+        [HttpGet("is-videos-ready")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> IsVideosReady([FromQuery] Guid id)
+        {
+            bool isReady = await _service.IsVideosReady(id);
+            return isReady ? Ok(isReady) : NotFound(isReady);
+        }
     }
 }
