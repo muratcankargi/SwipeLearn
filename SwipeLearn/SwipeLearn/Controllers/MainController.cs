@@ -4,6 +4,7 @@ using SwipeLearn.Context;
 using SwipeLearn.Models;
 using SwipeLearn.Models.ViewModels;
 using SwipeLearn.Services;
+using System.Net;
 
 namespace SwipeLearn.Controllers
 {
@@ -54,6 +55,27 @@ namespace SwipeLearn.Controllers
         {
             VideoUrls videoPaths = await _service.GetVideoByTopicId(id);
             return videoPaths != null ? Ok(videoPaths) : NotFound();
+        }
+
+
+        [HttpGet("quiz")]
+        [ProducesResponseType(typeof(QuizResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> GetQuiz([FromQuery] Guid id)
+        {
+                 var quiz = await _service.GetQuizByTopicIdAsync(id);
+            if (quiz.Questions.Count == 0)
+                return NotFound();
+
+            return Ok(quiz);
+        }
+
+        [HttpPost("quiz")]
+        [ProducesResponseType(typeof(QuizAnswerResponse),StatusCodes.Status200OK)]
+        public async Task<ActionResult<QuizAnswerResponse>> CheckQuizAnswer([FromBody] QuizAnswerRequest request)
+        {
+            QuizAnswerResponse result = await _service.CheckAnswerAsync(request);
+            return Ok(result);
         }
     }
 }

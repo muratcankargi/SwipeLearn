@@ -7,6 +7,9 @@ using Xabe.FFmpeg;
 using Xabe.FFmpeg.Downloader;
 using SwipeLearn.Models.ViewModels;
 using SwipeLearn.Repositories;
+using System.Text.Json.Serialization;
+using SwipeLearn.Utils;
+using static SwipeLearn.Utils.Enums;
 
 namespace SwipeLearn.Services
 {
@@ -17,15 +20,16 @@ namespace SwipeLearn.Services
         private readonly ITopicMaterial _topicMaterialRepository;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IVideo _videoRepository;
+        private readonly IQuestion _questionRepository;
 
-
-        public MainService(IHttpClientFactory httpClientFactory, ITopic repository, ITopicMaterial topicMaterial, IServiceScopeFactory scopeFactory, IVideo videoRepository)
+        public MainService(IHttpClientFactory httpClientFactory, ITopic repository, ITopicMaterial topicMaterial, IServiceScopeFactory scopeFactory, IVideo videoRepository, IQuestion questionRepository)
         {
             _httpClient = httpClientFactory.CreateClient();
             _topicRepository = repository;
             _topicMaterialRepository = topicMaterial;
             _scopeFactory = scopeFactory;
             _videoRepository = videoRepository;
+            _questionRepository = questionRepository;
         }
         public async Task<TopicGuid> CreateTopic(Topic topic)
         {
@@ -102,7 +106,7 @@ namespace SwipeLearn.Services
                     await scopedService.GenerateAndSaveImagesAsync(id, topic, description);
 
                     await scopedService.CreateVideosAsync(id);
-
+                    await scopedService.GenerateAndSaveQuestionsAsync(id, description);
                 }
                 catch (Exception ex)
                 {
@@ -499,6 +503,145 @@ namespace SwipeLearn.Services
                 videoUrls = fullPaths
             };
         }
+
+        public async Task<List<Question>> GenerateAndSaveQuestionsAsync(Guid topicId, string description)
+        {
+            var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
+            if (string.IsNullOrEmpty(apiKey))
+                throw new Exception("OpenAI API key is missing.");
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+            var requestBody = new
+            {
+                model = "gpt-4o-mini",
+                messages = new[]
+                {
+                    new { role = "system", content = "You are a helpful quiz generator. Respond ONLY with valid JSON, no explanations." },
+                    new { role = "user", content =
+                        $@"Konu: {description}.
+                        Bu konuya uygun olarak 10 adet çoktan seçmeli soru üret. 
+                        Her soru için 4 tane şık üret (A, B, C, D).
+                        Ayrıca hangi şıkkın doğru olduğunu belirt.
+                        Çıktıyı sadece şu JSON formatında ver:
+                        [
+                            {{
+                                ""question"": ""..."",
+                                ""answers"": [""A şıkkı"", ""B şıkkı"", ""C şıkkı"", ""D şıkkı""],
+                                ""correct"": ""A,B,C veya D""
+                            }},
+                            ...
+                        ]"
+                    }
+                },
+                temperature = 0.7
+            };
+
+            var response = await httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
+            var json = await response.Content.ReadAsStringAsync();
+
+            string? content = null;
+            try
+            {
+                content = JsonDocument.Parse(json)
+                    .RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+            }
+            catch
+            {
+                throw new Exception("ChatGPT response parse error.");
+            }
+
+            if (string.IsNullOrEmpty(content))
+                throw new Exception("ChatGPT did not return content.");
+
+            // JSON code block temizleme
+            content = content.Trim();
+            if (content.StartsWith("```"))
+            {
+                int firstLineBreak = content.IndexOf('\n');
+                int lastTriple = content.LastIndexOf("```");
+                if (firstLineBreak >= 0 && lastTriple > firstLineBreak)
+                {
+                    content = content.Substring(firstLineBreak + 1, lastTriple - firstLineBreak - 1).Trim();
+                }
+            }
+
+            // Deserialize
+            List<Question>? generatedQuestions;
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<List<QuestionJson>>(content);
+                if (parsed == null) throw new Exception("JSON boş geldi.");
+
+                generatedQuestions = parsed.Select(q => new Question
+                {
+                    TopicId = topicId,
+                    QuestionText = q.Question,
+                    Answers = q.Answers,
+                    Correct = q.Correct
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("ChatGPT output could not be deserialized.", ex);
+            }
+
+            // Veritabanına kaydet
+            foreach (var q in generatedQuestions)
+            {
+                await _questionRepository.AddAsync(q);
+            }
+
+            return generatedQuestions;
+        }
+
+
+        public async Task<QuizResponse> GetQuizByTopicIdAsync(Guid topicId)
+        {
+            var questions = await _questionRepository.GetQuestionsByTopicIdAsync(topicId);
+
+            if (questions == null || questions.Count == 0)
+                return new QuizResponse();
+
+            var response = new QuizResponse
+            {
+                Questions = questions.Select(q => new QuizItem
+                {
+                    Question = q.QuestionText ?? string.Empty,
+                    Options = q.Answers.ToList()
+                }).ToList()
+            };
+
+            return response;
+        }
+
+        public async Task<QuizAnswerResponse> CheckAnswerAsync(QuizAnswerRequest request)
+        {
+            var questions = await _questionRepository.GetQuestionsByTopicIdAsync(request.Id);
+
+            if (questions == null || questions.Count == 0)
+                return new QuizAnswerResponse { IsCorrect = false };
+
+            if (request.QuestionIndex < 0 || request.QuestionIndex >= questions.Count)
+                return new QuizAnswerResponse { IsCorrect = false };
+
+            var question = questions[request.QuestionIndex];
+
+            if (request.OptionIndex < 0 || request.OptionIndex >= question.Answers.Length)
+                return new QuizAnswerResponse { IsCorrect = false };
+
+            var selectedOption = ((OptionLetter)request.OptionIndex).ToString();
+
+            bool isCorrect = question.Correct == selectedOption;
+
+            return new QuizAnswerResponse { IsCorrect = isCorrect };
+        }
+
 
     }
 }
