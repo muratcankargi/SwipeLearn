@@ -13,7 +13,7 @@ export function Waiting() {
         <div className="mx-auto">
           <img src="/mascot.png" width={200} height={200} />
         </div>
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-center text-2xl font-semibold">
           Videoların 1-2 dakika içerisinde hazırlanmış olacak.
         </h1>
       </div>
@@ -27,7 +27,7 @@ export function Waiting() {
 
       <WaitingInfos />
 
-      <p className="text-sm text-gray-500">
+      <p className="text-center text-sm text-gray-500">
         Videolar oluşturulduğunda otomatik olarak yönlendirileceksin.
       </p>
     </>
