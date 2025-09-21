@@ -86,12 +86,20 @@ namespace SwipeLearn.Repositories
             return topic;
         }
 
-        public async Task<List<string>> GetVideoPathsByTopicIdAsync(Guid topicId)
+        public async Task<(List<string> VideoPaths, List<string> Descriptions)> GetVideoPathsByTopicIdAsync(Guid topicId)
         {
-            return await _context.Videos
+            var videoPaths = await _context.Videos
                 .Where(v => v.TopicId == topicId)
                 .Select(v => v.VideoPath)
                 .ToListAsync();
+
+            var topicMaterial = await _context.TopicMaterials
+                .Where(tm => tm.TopicId == topicId)
+                .FirstOrDefaultAsync();
+
+            var descriptions = topicMaterial?.Description ?? new List<string>();
+
+            return (videoPaths, descriptions);
         }
 
         public Task DeleteAsync(Guid id)

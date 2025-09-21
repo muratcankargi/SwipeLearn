@@ -565,18 +565,20 @@ namespace SwipeLearn.Services
 
         public async Task<VideoUrls?> GetVideoByTopicId(Guid topic_id)
         {
-            var videoUrlPaths = await _videoRepository.GetVideoPathsByTopicIdAsync(topic_id);
-            if (videoUrlPaths == null || videoUrlPaths.Count == 0)
+            var (videoUrlPaths, descriptions) = await _videoRepository.GetVideoPathsByTopicIdAsync(topic_id);
+            VideoUrls model = new VideoUrls();
+
+            if (videoUrlPaths == null || descriptions == null || videoUrlPaths.Count == 0 || descriptions.Count == 0)
                 return null;
 
-            var fullPaths = videoUrlPaths
-                .Select(path => Path.Combine("videos", path))
-                .ToList();
+            model.videoUrls = videoUrlPaths;
+            model.Descriptions = descriptions;
 
-            return new VideoUrls
-            {
-                videoUrls = fullPaths
-            };
+            //var fullPaths = videoUrlPaths
+            //    .Select(path => Path.Combine("videos", path))
+            //    .ToList();
+
+            return model;
         }
 
         public async Task<List<Question>> GenerateAndSaveQuestionsAsync(Guid topicId, string description)

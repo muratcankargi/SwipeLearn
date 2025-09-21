@@ -16,7 +16,7 @@ namespace SwipeLearn.Interfaces
         Task UpdateAsync(Video entity);
         Task DeleteAsync(Guid id);
         Task<Video> GetByTopicId(Guid id);
-        Task<List<string>> GetVideoPathsByTopicIdAsync(Guid topicId);
+        Task<(List<string> VideoPaths, List<string> Descriptions)> GetVideoPathsByTopicIdAsync(Guid topicId);
 
     }
 }
