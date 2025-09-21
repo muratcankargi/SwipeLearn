@@ -1,14 +1,15 @@
-﻿using SwipeLearn.Interfaces;
+﻿using SwipeLearn.Context;
+using SwipeLearn.Interfaces;
 using SwipeLearn.Models;
-using System.Text.Json;
-using System.Text;
-using System.Diagnostics;
-using Xabe.FFmpeg;
-using Xabe.FFmpeg.Downloader;
 using SwipeLearn.Models.ViewModels;
 using SwipeLearn.Repositories;
-using System.Text.Json.Serialization;
 using SwipeLearn.Utils;
+using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Xabe.FFmpeg;
+using Xabe.FFmpeg.Downloader;
 using static SwipeLearn.Utils.Enums;
 
 namespace SwipeLearn.Services
@@ -148,7 +149,6 @@ namespace SwipeLearn.Services
                 using (var scope = _scopeFactory.CreateScope())
                 {
                     var scopedService = scope.ServiceProvider.GetRequiredService<MainService>();
-                    // Questions DB işlemi bağımsız scope'ta yapılabilir
                     await scopedService.GenerateAndSaveQuestionsAsync(id, string.Join("\n\n", descriptionParts));
                 }
                 Console.WriteLine("Question Oluşturma Bitti");
@@ -164,8 +164,6 @@ namespace SwipeLearn.Services
                         using var videoScope = _scopeFactory.CreateScope();
                         var scopedService = videoScope.ServiceProvider.GetRequiredService<MainService>();
 
-                        // Artık her metod kendi scope içinde çalışıyor
-                        // await scopedService.GenerateTextToSpeech(part, id);
                         await scopedService.GenerateAndSaveImagesAsync(id, topic, part);
                         await scopedService.CreateVideosAsync(id, index);
 
@@ -176,13 +174,25 @@ namespace SwipeLearn.Services
                         Console.WriteLine($"Video {index + 1} işlemi başarısız: {ex.Message}");
                     }
                 }
+
+                // ⬇️ For döngüsünden sonra isVideosReady güncelle
+                using (var updateScope = _scopeFactory.CreateScope())
+                {
+                    var db = updateScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    var topicEntity = await db.Topics.FindAsync(id);
+                    if (topicEntity != null)
+                    {
+                        topicEntity.IsVideosReady = true;
+                        await db.SaveChangesAsync();
+                    }
+                }
+                Console.WriteLine("isVideosReady güncellendi ✅");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"PostProcessing failed: {ex.Message}");
             }
         }
-
 
 
 
@@ -541,10 +551,17 @@ namespace SwipeLearn.Services
             };
         }
 
-        public async Task<bool> IsVideosReady(Guid topic_id)
+        public async Task<bool> IsVideosReady(Guid topicId)
         {
-            return await _videoRepository.GetByTopicId(topic_id) == null ? false : true;
+            var topic = await _topicRepository.GetById(topicId);
+
+            if (topic == null)
+                return false; // böyle bir topic yoksa false döndür
+
+            return topic.IsVideosReady; // direkt kolon değerini dön
         }
+
+
         public async Task<VideoUrls?> GetVideoByTopicId(Guid topic_id)
         {
             var videoUrlPaths = await _videoRepository.GetVideoPathsByTopicIdAsync(topic_id);
