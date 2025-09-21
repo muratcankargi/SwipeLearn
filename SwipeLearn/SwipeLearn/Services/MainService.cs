@@ -101,12 +101,21 @@ namespace SwipeLearn.Services
                 {
                     using var scope = _scopeFactory.CreateScope();
                     var scopedService = scope.ServiceProvider.GetRequiredService<MainService>();
+                    Console.WriteLine("Question Oluşturma Başladı");
+                    scopedService.GenerateAndSaveQuestionsAsync(id, description);
+                    Console.WriteLine("Question Oluşturma Bitti");
 
+                    Console.WriteLine("Ses Oluşturma Başladı");
                     await scopedService.GenerateTextToSpeech(description, id);
+                    Console.WriteLine("Ses Oluşturma Bitti");
+                    Console.WriteLine("Resim Oluşturma Başladı");
                     await scopedService.GenerateAndSaveImagesAsync(id, topic, description);
+                    Console.WriteLine("Resim Oluşturma Bitti");
 
+                    Console.WriteLine("Video Oluşturma Başladı");
                     await scopedService.CreateVideosAsync(id);
-                    await scopedService.GenerateAndSaveQuestionsAsync(id, description);
+                    Console.WriteLine("Video Oluşturma Bitti");
+
                 }
                 catch (Exception ex)
                 {
@@ -516,19 +525,25 @@ namespace SwipeLearn.Services
             {
                 model = "gpt-4o-mini",
                 messages = new[]
-                {
+                 {
                     new { role = "system", content = "You are a helpful quiz generator. Respond ONLY with valid JSON, no explanations." },
                     new { role = "user", content =
                         $@"Konu: {description}.
                         Bu konuya uygun olarak 10 adet çoktan seçmeli soru üret. 
-                        Her soru için 4 tane şık üret (A, B, C, D).
-                        Ayrıca hangi şıkkın doğru olduğunu belirt.
-                        Çıktıyı sadece şu JSON formatında ver:
+
+                        Kurallar:
+                        - Sorular kolaydan zora doğru sıralansın (1. soru en kolay, 10. soru en zor olsun).
+                        - Sorular çok kısa olmamalı, açıklayıcı ve öğretici bir üslup taşımalı.
+                        - Eğer önemli ek bilgiler veya kritik ayrıntılar varsa, bunları sorulara yansıt.
+                        - Her soru için 4 tane şık üret (A, B, C, D).
+                        - Doğru cevaplar her zaman aynı şık olmasın, karışık dağıtılsın.
+                        - Çıktıyı sadece şu JSON formatında ver, başka açıklama ekleme:
+
                         [
                             {{
-                                ""question"": ""..."",
+                                ""question"": ""...soru metni..."",
                                 ""answers"": [""A şıkkı"", ""B şıkkı"", ""C şıkkı"", ""D şıkkı""],
-                                ""correct"": ""A,B,C veya D""
+                                ""correct"": ""A,B,C veya D"" 
                             }},
                             ...
                         ]"
@@ -536,6 +551,7 @@ namespace SwipeLearn.Services
                 },
                 temperature = 0.7
             };
+
 
             var response = await httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
             var json = await response.Content.ReadAsStringAsync();
