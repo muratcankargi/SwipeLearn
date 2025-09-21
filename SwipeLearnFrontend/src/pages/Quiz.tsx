@@ -1,28 +1,13 @@
 import { TakeNotes } from "@/components/take-notes";
 import { Button } from "@/components/ui/button";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { Progress } from "@/components/ui/progress";
+import { useGetTopicQuiz, usePostTopicQuiz } from "@/data/query";
+import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight, MonitorStop } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-
-type Question = {
-  id: number;
-  question: string;
-  options: string[];
-};
-
-const dummyQuestions: Question[] = [
-  {
-    id: 1,
-    question: "İstanbul hangi yılda fethedildi?",
-    options: ["1453", "1923", "1071", "1402"],
-  },
-  {
-    id: 2,
-    question: "Cumhuriyet hangi yıl ilan edildi?",
-    options: ["1919", "1920", "1923", "1938"],
-  },
-];
+import { toast } from "sonner";
 
 const indexToLetter: Record<number, string> = {
   0: "A",
@@ -32,14 +17,26 @@ const indexToLetter: Record<number, string> = {
 };
 
 export function Quiz() {
-  const [questions] = useState<Question[]>(dummyQuestions);
+  const params = useParams<{ id: string }>();
+
+  const questionsQuery = useGetTopicQuiz({ query: { id: params.id } });
+
+  const questions = questionsQuery.data?.questions ?? [];
+
+  // currentQuestionIndex
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const currentQuestion = questions[currentIndex];
 
-  const params = useParams<{ id: string }>();
-
   const progress = ((currentIndex + 1) * 100) / questions.length;
+
+  const [answers, setAnswers] = useState<
+    {
+      questionIndex: number;
+      optionIndex: number;
+      correctOptionIndex: number | undefined;
+    }[]
+  >([]);
 
   const nextQuestion = () => {
     if (currentIndex + 1 === questions.length) return;
@@ -52,6 +49,43 @@ export function Quiz() {
 
     setCurrentIndex((prevValue) => prevValue - 1);
   };
+
+  const mutation = usePostTopicQuiz();
+
+  const handleOptionClick = (optionIndex: number) => {
+    mutation.mutate(
+      {
+        body: {
+          id: params.id,
+          questionIndex: currentIndex,
+          optionIndex: optionIndex,
+        },
+      },
+      {
+        onSuccess: (data) => {
+          setAnswers((prevValues) => [
+            ...prevValues,
+            {
+              questionIndex: currentIndex,
+              optionIndex: optionIndex,
+              correctOptionIndex: data.isCorrect ? optionIndex : undefined, // burası değişecek
+            },
+          ]);
+
+          if (!data.isCorrect) {
+            toast.info("Yanlış cevap.");
+          }
+        },
+        onError: () => {
+          toast.error("Bir şeyler ters gitti.");
+        },
+      },
+    );
+  };
+
+  if (questionsQuery.isLoading) return <LoadingIndicator />;
+  if (questionsQuery.isError || !questionsQuery.data?.questions)
+    return <div>Bir şeyler ters gitti.</div>;
 
   return (
     <>
@@ -100,8 +134,24 @@ export function Quiz() {
       </div>
 
       <div className="space-2 grid w-2/3 grid-cols-2 gap-4">
-        {currentQuestion.options.map((option, i) => (
-          <button className="bg-tw-primary hover:bg-tw-primary/90 rounded-md p-4 shadow">
+        {currentQuestion.options?.map((option, i) => (
+          <button
+            key={`${currentIndex}-${i}`}
+            disabled={
+              !!answers.find((answer) => answer.questionIndex === currentIndex)
+            }
+            onClick={() => handleOptionClick(i)}
+            className={cn(
+              "bg-tw-primary hover:bg-tw-primary/90 rounded-md p-4 shadow transition-colors",
+              {
+                "hover:bg-tw-green-400/90 bg-green-400": answers.find(
+                  (answer) =>
+                    answer.questionIndex === currentIndex &&
+                    answer.correctOptionIndex === i,
+                ),
+              },
+            )}
+          >
             {indexToLetter[i]}) {option}
           </button>
         ))}

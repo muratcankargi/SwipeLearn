@@ -11,3 +11,10 @@ export type GetIsVideosReadyQuery =
   paths["/api/Topic/is-videos-ready"]["get"]["parameters"]["query"];
 
 export type GetVideoQuery = paths["/api/video"]["get"]["parameters"]["query"];
+
+export type GetTopicQuizQuery =
+  paths["/api/Topic/quiz"]["get"]["parameters"]["query"];
+
+export type PostTopicQuizBody = NonNullable<
+  paths["/api/Topic/quiz"]["post"]["requestBody"]
+>["content"]["application/json"];

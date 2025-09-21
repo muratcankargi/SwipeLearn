@@ -1,15 +1,19 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   getIsVideosReady,
+  getTopicQuiz,
   getTopicShortInfo,
   getVideo,
   postTopic,
+  postTopicQuiz,
 } from "./api";
 import type {
   GetIsVideosReadyQuery,
+  GetTopicQuizQuery,
   GetTopicShortInfoQuery,
   GetVideoQuery,
   PostTopicBody,
+  PostTopicQuizBody,
 } from "./schema-types";
 import { useNavigate } from "react-router";
 
@@ -83,6 +87,38 @@ export function useGetVideo({ query }: { query: GetVideoQuery }) {
     queryKey: ["get-video", query],
     queryFn: async () => {
       const { data, error } = await getVideo({ query });
+
+      if (error) {
+        console.log("Error: ", error);
+        throw error;
+      }
+
+      return data;
+    },
+  });
+}
+
+export function useGetTopicQuiz({ query }: { query: GetTopicQuizQuery }) {
+  return useQuery({
+    queryKey: ["get-topic-quiz", query],
+    queryFn: async () => {
+      const { data, error } = await getTopicQuiz({ query });
+
+      if (error) {
+        console.log("Error: ", error);
+        throw error;
+      }
+
+      return data;
+    },
+  });
+}
+
+export function usePostTopicQuiz() {
+  return useMutation({
+    mutationKey: ["post-topic-quiz"],
+    mutationFn: async ({ body }: { body: PostTopicQuizBody }) => {
+      const { data, error } = await postTopicQuiz({ body });
 
       if (error) {
         console.log("Error: ", error);
