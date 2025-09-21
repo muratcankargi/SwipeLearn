@@ -6,6 +6,7 @@ using System.Diagnostics;
 using Xabe.FFmpeg;
 using Xabe.FFmpeg.Downloader;
 using SwipeLearn.Models.ViewModels;
+using SwipeLearn.Repositories;
 
 namespace SwipeLearn.Services
 {
@@ -14,15 +15,17 @@ namespace SwipeLearn.Services
         private readonly HttpClient _httpClient;
         private readonly ITopic _topicRepository;
         private readonly ITopicMaterial _topicMaterialRepository;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IVideo _videoRepository;
 
 
-        public MainService(IHttpClientFactory httpClientFactory, ITopic repository, ITopicMaterial topicMaterial, IServiceProvider serviceProvider)
+        public MainService(IHttpClientFactory httpClientFactory, ITopic repository, ITopicMaterial topicMaterial, IServiceScopeFactory scopeFactory, IVideo videoRepository)
         {
             _httpClient = httpClientFactory.CreateClient();
             _topicRepository = repository;
             _topicMaterialRepository = topicMaterial;
-            _serviceProvider = serviceProvider;
+            _scopeFactory = scopeFactory;
+            _videoRepository = videoRepository;
         }
         public async Task<TopicGuid> CreateTopic(Topic topic)
         {
@@ -39,11 +42,11 @@ namespace SwipeLearn.Services
             {
                 try
                 {
-                    using var scope = _serviceProvider.CreateScope();
+                    using var scope = _scopeFactory.CreateScope();
                     var scopedService = scope.ServiceProvider.GetRequiredService<MainService>();
 
-                    // GetText çağrısı
                     await scopedService.GetText(topic.Description, model.Id);
+
                 }
                 catch (Exception ex)
                 {
@@ -53,32 +56,6 @@ namespace SwipeLearn.Services
             });
             return model;
 
-        }
-        public async Task<(Guid id, string text, List<string> urls)> Create(Topic topic)
-        {
-            if (topic == null || topic.Description == null) return (Guid.Empty, "", new List<string>());
-
-            var topicExist = await _topicRepository.GetByDescription(topic.Description);
-            if (topicExist != null) return (Guid.Empty, "", new List<string>());
-
-            topic.Id = Guid.NewGuid();
-            //await _repository.AddAsync(topic);
-            topic.Description = "İstanbul'un Fethi";
-            //var text = await GetText(topic.Description);
-            var text = "İstanbul'un Fethi, 29 Mayıs 1453 tarihinde gerçekleşmiş, tarihin akışını değiştiren önemli bir olaydır. Osmanlı Padişahı II. Mehmet, şehri kuşatma planları yaparken, tüm dünya bu büyük mücadeleyi merakla izliyordu. Kuşatma sırasında kullanılan devasa toplar, surları aşarak İstanbul'un savunmasını zayıflattı.\n\nFethin en çarpıcı anlarından biri, şehrin surlarının önünde yer alan etkileyici Topkapı Sarayı’dır. Sarayın yüksek ve sağlam surları, bir zamanlar Bizans'ın gücünü simgeliyordu. II. Mehmet’in stratejik liderliği sayesinde, Osmanlı ordusu bu güçlü savunmayı aşmayı başardı. \n\nŞehrin fethi, sadece askeri bir zafer değil, kültürel ve ekonomik bir dönüşümün başlangıcını müjdeliyordu. İstanbul, tüm dünyanın gözdesi haline gelerek, Doğu ile Batı arasında bir köprü işlevi gördü. \n\nSonuç olarak, İstanbul'un Fethi, sadece askeri güç değil, aynı zamanda zeka ve stratejinin de bir zaferiydi. Bu olay, şehirlerin tarihindeki önemli dönüm noktalarından biri olarak günümüzde bile etkisini sürdürmektedir. İstanbul, fetihle birlikte Osmanlı İmparatorluğu’nun kalbi olmuş, tüm dünyanın ilgisini üzerine çekmiştir.";
-            //var image_urls = await GenerateImagesAsync(topic.Description, text);
-            //var voice = SynthesizeToFileAsync(text);
-            //Console.WriteLine(voice);
-            List<string> urls = [Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img07.jpeg"),
-               Path.Combine(Directory.GetCurrentDirectory(),"wwwroot", "images", "img08.jpg"),
-             Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img09.jpeg"),
-             Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images","img10.jpeg"),
-            ];
-            var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", "elevenlabs_20250920_114819.mp3");
-
-            var path = await CreateVideoAsync(urls, audioPath);
-            //Console.WriteLine("video path =" + path);
-            return (topic.Id, text, new List<string>());
         }
 
         //topic to text with chatgpt
@@ -118,8 +95,14 @@ namespace SwipeLearn.Services
             {
                 try
                 {
-                    //await GenerateTextToSpeech(description, topicMaterial);
-                    //await GenerateImagesAsync(topic, description);
+                    using var scope = _scopeFactory.CreateScope();
+                    var scopedService = scope.ServiceProvider.GetRequiredService<MainService>();
+
+                    await scopedService.GenerateTextToSpeech(description, id);
+                    await scopedService.GenerateAndSaveImagesAsync(id, topic, description);
+
+                    await scopedService.CreateVideosAsync(id);
+
                 }
                 catch (Exception ex)
                 {
@@ -168,6 +151,23 @@ namespace SwipeLearn.Services
             return message;
         }
 
+        public async Task<List<string>> GenerateAndSaveImagesAsync(Guid topicId, string topic, string text)
+        {
+            var topicMaterial = await _topicMaterialRepository.GetByTopicId(topicId);
+            if (topicMaterial == null)
+                Console.WriteLine("TopicMaterial not found.");
+
+            var imageUrls = await GenerateImagesAsync(topic, text);
+
+            // 3. Images alanına ekle veya oluştur
+            topicMaterial.Images ??= new List<string>();
+            topicMaterial.Images.AddRange(imageUrls);
+
+            // 4. Veritabanına kaydet
+            await _topicMaterialRepository.UpdateAsync(topicMaterial);
+
+            return imageUrls;
+        }
 
         public async Task<List<string>> GenerateImagesAsync(string topic, string text)
         {
@@ -175,24 +175,22 @@ namespace SwipeLearn.Services
 
             var falAiApiKey = Environment.GetEnvironmentVariable("FALAI_API_KEY");
             if (string.IsNullOrEmpty(falAiApiKey))
-                throw new Exception("Fal.ai API key is missing. Set the FALAI_API_KEY environment variable.");
+                throw new Exception("Fal.ai API key is missing.");
 
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Key {falAiApiKey}");
 
-            // 4 resmi aynı anda paralel job olarak isteyelim
-            var tasks = Enumerable.Range(0, 4).Select(_ => GenerateSingleImageAsync(prompt)).ToList();
+            var tasks = Enumerable.Range(0, 4).Select(_ => GenerateAndSaveSingleImageAsync(prompt)).ToList();
             var results = await Task.WhenAll(tasks);
 
             return results.ToList();
         }
 
-        private async Task<string> GenerateSingleImageAsync(string prompt)
+        private async Task<string> GenerateAndSaveSingleImageAsync(string prompt)
         {
             var jsonBody = JsonSerializer.Serialize(new
             {
                 prompt,
-                //image_size = "320x600",
                 image_size = new { width = 320, height = 600 },
                 num_images = 1
             });
@@ -213,11 +211,12 @@ namespace SwipeLearn.Services
 
             var responseUrl = root.GetProperty("response_url").GetString();
             if (string.IsNullOrEmpty(responseUrl))
-                throw new Exception("Fal.ai response_url not found in API response.");
+                throw new Exception("Fal.ai response_url not found.");
 
             // Polling: exponential backoff
             int delay = 500;
-            for (int i = 0; i < 20; i++) // max ~1 dk
+            string imageUrl = null!;
+            for (int i = 0; i < 20; i++)
             {
                 var pollResp = await _httpClient.GetAsync(responseUrl);
                 var pollJson = await pollResp.Content.ReadAsStringAsync();
@@ -229,27 +228,40 @@ namespace SwipeLearn.Services
 
                     if (pollRoot.TryGetProperty("images", out var images) && images.GetArrayLength() > 0)
                     {
-                        return images[0].GetProperty("url").GetString()!;
+                        imageUrl = images[0].GetProperty("url").GetString()!;
+                        break;
                     }
                 }
-                catch
-                {
-                    // JSON parse hatası olursa bekle ve tekrar dene
-                }
+                catch { }
 
                 await Task.Delay(delay);
                 delay = Math.Min(delay * 2, 5000);
             }
 
-            throw new Exception("Fal.ai image was not ready after waiting.");
+            if (string.IsNullOrEmpty(imageUrl))
+                throw new Exception("Image was not ready after waiting.");
+
+            // Resmi indir
+            var imageBytes = await _httpClient.GetByteArrayAsync(imageUrl);
+
+            // Kaydetmek için dosya adı üret
+            var fileName = $"{Guid.NewGuid()}.png";
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
+
+            // wwwroot/images klasörünün varlığını kontrol et
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+            await File.WriteAllBytesAsync(path, imageBytes);
+
+            // Dosya adını return et
+            return fileName;
         }
 
-
-        public async Task<string> GenerateTextToSpeech(string text, TopicMaterial topicMaterial, string outputFilePath = null, string outputFormat = "mp3_44100_128")
+        public async Task<string> GenerateTextToSpeech(string text, Guid id, string outputFilePath = null, string outputFormat = "mp3_44100_128")
         {
             try
             {
-
+                /*
                 if (string.IsNullOrWhiteSpace(text)) throw new ArgumentException("text boş olamaz.", nameof(text));
                 string voiceId = "dgeCtiGkvIwzoR09qzjl";
                 var elevenLabsAiApiKey = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY");
@@ -284,6 +296,10 @@ namespace SwipeLearn.Services
 
                 var bytes = await response.Content.ReadAsByteArrayAsync();
                 await System.IO.File.WriteAllBytesAsync(outputFilePath, bytes);
+                */
+                var topicMaterial = await _topicMaterialRepository.GetByTopicId(id);
+                outputFilePath = "elevenlabs_20250920_114819.mp3";
+                topicMaterial.Voice ??= new List<string>();
 
                 topicMaterial.Voice.Add(outputFilePath);
 
@@ -300,63 +316,84 @@ namespace SwipeLearn.Services
             }
         }
 
-        public async Task<string> CreateVideoAsync(List<string> imagePaths, string audioPath, string outputPath = null)
+        public async Task<List<string>> CreateVideosAsync(Guid topicId)
         {
-            if (imagePaths == null || imagePaths.Count == 0)
-                throw new ArgumentException("En az 1 görsel gerekli", nameof(imagePaths));
-            if (string.IsNullOrEmpty(audioPath) || !File.Exists(audioPath))
-                throw new ArgumentException("Ses dosyası bulunamadı", nameof(audioPath));
+            var topic = await _topicMaterialRepository.GetByTopicId(topicId);
 
-            outputPath ??= Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "videos",
-                $"output_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mp4");
-            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+            if (topic.Images == null || topic.Images.Count == 0)
+                throw new ArgumentException("En az 1 görsel gerekli", nameof(topic.Images));
+            if (topic.Voice == null || topic.Voice.Count == 0)
+                throw new ArgumentException("En az 1 ses gerekli", nameof(topic.Voice));
 
-            // FFmpeg dosyalarının hazır olduğundan emin ol
-            //await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
+            var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "videos");
+            Directory.CreateDirectory(outputDir);
 
-            // 1. Ses uzunluğunu al
-            var audioInfo = await FFmpeg.GetMediaInfo(audioPath);
-            double audioDuration = audioInfo.Duration.TotalSeconds;
+            var createdVideos = new List<string>();
 
-            // 2. Her resim için video klip oluştur (12 saniye örnek)
-            var tempVideos = new List<string>();
-            double perImageDuration = audioDuration / imagePaths.Count;
+            int groupCount = Math.Min(topic.Voice.Count, (int)Math.Ceiling(topic.Images.Count / 4.0));
 
-            for (int i = 0; i < imagePaths.Count; i++)
+            for (int i = 0; i < groupCount; i++)
             {
-                string tempVideo = Path.Combine(Path.GetTempPath(), $"img_{i}.mp4");
-                tempVideos.Add(tempVideo);
-                Console.WriteLine($"Image {i}: duration={perImageDuration}");
+                var imageGroup = topic.Images.Skip(i * 4).Take(4).ToList();
+                var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", topic.Voice[i]); 
+
+                if (imageGroup.Count == 0 || string.IsNullOrEmpty(audioPath))
+                    continue;
+
+                // Ses uzunluğunu öğren
+                var audioInfo = await FFmpeg.GetMediaInfo(audioPath);
+                double audioDuration = audioInfo.Duration.TotalSeconds;
+
+                // Resim başına süre
+                double perImageDuration = audioDuration / imageGroup.Count;
+
+                // Geçici videolar oluştur
+                var tempVideos = new List<string>();
+                for (int j = 0; j < imageGroup.Count; j++)
+                {
+                    string imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", imageGroup[j]);
+                    string tempVideo = Path.Combine(Path.GetTempPath(), $"img_{i}_{j}.mp4");
+                    tempVideos.Add(tempVideo);
+
+                    await FFmpeg.Conversions.New()
+                        .AddParameter($"-loop 1 -t {perImageDuration.ToString(System.Globalization.CultureInfo.InvariantCulture)} -i \"{imagePath}\"")
+                        .AddParameter("-c:v libx264 -pix_fmt yuv420p")
+                        .SetOutput(tempVideo)
+                        .Start();
+                }
+
+                // concat dosyası
+                string concatFile = Path.Combine(Path.GetTempPath(), $"concat_{i}.txt");
+                await File.WriteAllLinesAsync(concatFile, tempVideos.Select(v => $"file '{v.Replace("\\", "/")}'"));
+
+                string tempConcatVideo = Path.Combine(Path.GetTempPath(), $"concat_{i}.mp4");
                 await FFmpeg.Conversions.New()
-                    .AddParameter($"-loop 1 -t {perImageDuration.ToString(System.Globalization.CultureInfo.InvariantCulture)} -i \"{imagePaths[i]}\"")
-                    .AddParameter("-c:v libx264 -pix_fmt yuv420p")
-                    .SetOutput(tempVideo)
+                    .AddParameter($"-f concat -safe 0 -i \"{concatFile}\" -c:v libx264 -pix_fmt yuv420p \"{tempConcatVideo}\"")
                     .Start();
+
+                // Son çıktı
+                string outputPath = Path.Combine(outputDir, $"video_{i + 1}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mp4");
+                await FFmpeg.Conversions.New()
+                    .AddParameter($"-i \"{tempConcatVideo}\" -i \"{audioPath}\" -c:v copy -c:a aac -shortest \"{outputPath}\"")
+                    .Start();
+
+                // DB'ye kaydet (Videos tablosu)
+                var videoEntity = new Video
+                {
+                    TopicId = topicId,
+                    VideoPath = Path.GetFileName(outputPath)
+                };
+                await _videoRepository.AddAsync(videoEntity);
+
+                createdVideos.Add(videoEntity.VideoPath);
+
+                // geçici dosyaları temizle
+                foreach (var temp in tempVideos.Append(tempConcatVideo))
+                    if (File.Exists(temp)) File.Delete(temp);
             }
 
-            // 3. Tüm image videoları birleştir
-            string concatFile = Path.Combine(Path.GetTempPath(), "concat.txt");
-            await File.WriteAllLinesAsync(concatFile, tempVideos.Select(v => $"file '{v.Replace("\\", "/")}'"));
-
-            string tempConcatVideo = Path.Combine(Path.GetTempPath(), "concat_video.mp4");
-            await Task.Delay(200);
-            await FFmpeg.Conversions.New()
-                .AddParameter($"-f concat -safe 0 -i \"{concatFile}\" -c:v libx264 -pix_fmt yuv420p \"{tempConcatVideo}\"")
-                .Start();
-            await Task.Delay(200);
-            // 4. Ses ekle
-            await FFmpeg.Conversions.New()
-                .AddParameter($"-i \"{tempConcatVideo}\" -i \"{audioPath}\" -c:v copy -c:a aac -shortest \"{outputPath}\"")
-                .Start();
-
-            // Geçici dosyaları temizleyebilirsin
-            foreach (var temp in tempVideos.Append(tempConcatVideo))
-                if (File.Exists(temp)) File.Delete(temp);
-
-            return outputPath;
+            return createdVideos;
         }
-
-
 
         public async Task<TopicInfoItem> GetStructuredTopicInfoAsync(Guid id)
         {
