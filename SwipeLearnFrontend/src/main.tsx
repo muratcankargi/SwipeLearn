@@ -2,12 +2,12 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { App } from "./pages/App";
-import { Swipe } from "./pages/Swipe";
 import { Quiz } from "./pages/Quiz";
 import { Waiting } from "./pages/Waiting";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { Layout } from "./pages/Layout";
+import { SwipeDataFetch } from "./components/swipe-data-fetch";
 
 const router = createBrowserRouter([
   {
@@ -24,7 +24,7 @@ const router = createBrowserRouter([
       },
       {
         path: "kaydir/:id",
-        element: <Swipe />,
+        element: <SwipeDataFetch />,
       },
       {
         path: "quiz/:id",

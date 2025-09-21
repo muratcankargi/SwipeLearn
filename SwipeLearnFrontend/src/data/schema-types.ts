@@ -9,3 +9,5 @@ export type GetTopicShortInfoQuery =
 
 export type GetIsVideosReadyQuery =
   paths["/api/Topic/is-videos-ready"]["get"]["parameters"]["query"];
+
+export type GetVideoQuery = paths["/api/video"]["get"]["parameters"]["query"];

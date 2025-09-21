@@ -2,6 +2,7 @@ import { client } from "./client";
 import type {
   GetIsVideosReadyQuery,
   GetTopicShortInfoQuery,
+  GetVideoQuery,
   PostTopicBody,
 } from "./schema-types";
 
@@ -23,4 +24,8 @@ export async function getIsVideosReady({
   query: GetIsVideosReadyQuery;
 }) {
   return await client.GET("/api/Topic/is-videos-ready", { params: { query } });
+}
+
+export async function getVideo({ query }: { query: GetVideoQuery }) {
+  return await client.GET("/api/video", { params: { query } });
 }

@@ -8,17 +8,11 @@ const CENTER_OF_SCREEN = window.innerWidth / 2 - 160;
 const VIDEO_WIDTH = 320;
 const VIDEO_HEIGHT = 600;
 
-export function Swipe() {
+export function Swipe({ videoUrls }: { videoUrls: string[] }) {
   const params = useParams<{ id: string }>();
 
-  const {
-    nextVideo,
-    previousVideo,
-    currentVideoIndex,
-    positions,
-    videoUrls,
-    videoRefs,
-  } = useHandleVideoChanges();
+  const { nextVideo, previousVideo, currentVideoIndex, positions, videoRefs } =
+    useHandleVideoChanges({ videoUrls });
 
   return (
     <>
@@ -57,7 +51,7 @@ export function Swipe() {
           <video
             key={videoUrl}
             ref={videoRefs[i]}
-            src={videoUrl}
+            src={`${import.meta.env.VITE_BACKEND_URL}${videoUrl}`}
             style={{
               translate: positions[i].x,
               width: VIDEO_WIDTH,
@@ -76,9 +70,7 @@ export function Swipe() {
   );
 }
 
-function useHandleVideoChanges() {
-  const [videoUrls] = useState(["/video1.mp4", "/video2.mp4", "/video3.mp4"]);
-
+function useHandleVideoChanges({ videoUrls }: { videoUrls: string[] }) {
   const initialPositions = videoUrls.map((_, i) => {
     return { x: CENTER_OF_SCREEN + i * VIDEO_WIDTH };
   });

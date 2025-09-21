@@ -1,8 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getIsVideosReady, getTopicShortInfo, postTopic } from "./api";
+import {
+  getIsVideosReady,
+  getTopicShortInfo,
+  getVideo,
+  postTopic,
+} from "./api";
 import type {
   GetIsVideosReadyQuery,
   GetTopicShortInfoQuery,
+  GetVideoQuery,
   PostTopicBody,
 } from "./schema-types";
 import { useNavigate } from "react-router";
@@ -65,6 +71,22 @@ export function useGetIsVideosReady({
 
       if (data.isReady) {
         navigate(`/kaydir/${query?.id}`);
+      }
+
+      return data;
+    },
+  });
+}
+
+export function useGetVideo({ query }: { query: GetVideoQuery }) {
+  return useQuery({
+    queryKey: ["get-video", query],
+    queryFn: async () => {
+      const { data, error } = await getVideo({ query });
+
+      if (error) {
+        console.log("Error: ", error);
+        throw error;
       }
 
       return data;
