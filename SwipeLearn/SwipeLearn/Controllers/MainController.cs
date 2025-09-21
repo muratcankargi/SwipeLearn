@@ -46,5 +46,14 @@ namespace SwipeLearn.Controllers
             bool isReady = await _service.IsVideosReady(id);
             return isReady ? Ok(isReady) : NotFound(isReady);
         }
+
+        [HttpGet("/api/video")]
+        [ProducesResponseType(typeof(VideoUrls), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(VideoUrls), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetVideoByTopicId([FromQuery] Guid id)
+        {
+            VideoUrls videoPaths = await _service.GetVideoByTopicId(id);
+            return videoPaths != null ? Ok(videoPaths) : NotFound();
+        }
     }
 }

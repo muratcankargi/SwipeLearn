@@ -484,6 +484,21 @@ namespace SwipeLearn.Services
         {
             return await _videoRepository.GetByTopicId(topic_id) == null ? false : true;
         }
+        public async Task<VideoUrls?> GetVideoByTopicId(Guid topic_id)
+        {
+            var videoUrlPaths = await _videoRepository.GetVideoPathsByTopicIdAsync(topic_id);
+            if (videoUrlPaths == null || videoUrlPaths.Count == 0)
+                return null;
+
+            var fullPaths = videoUrlPaths
+                .Select(path => Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "videos", path))
+                .ToList();
+
+            return new VideoUrls
+            {
+                videoUrls = fullPaths
+            };
+        }
 
     }
 }
