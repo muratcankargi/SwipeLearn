@@ -11,7 +11,7 @@ namespace SwipeLearn.Interfaces
            Expression<Func<Topic, bool>> filter = null,
            Expression<Func<IQueryable<Topic>, IOrderedQueryable<Topic>>> orderBy = null,
            string includeProperties = "", PagingInfo pagingInfo = null);
-        Task<Topic> GetById(int id);
+        Task<Topic> GetById(Guid id);
         Task AddAsync(Topic entity);
         Task UpdateAsync(Topic entity);
         Task DeleteAsync(Guid id);

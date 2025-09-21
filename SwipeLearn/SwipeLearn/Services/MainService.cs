@@ -399,13 +399,11 @@ namespace SwipeLearn.Services
             return createdVideos;
         }
 
-        // Bu çok uzun sürüyor acaba description'u oluşturmadan mı oluştursak infoları
         public async Task<TopicInfoItem> GetStructuredTopicInfoAsync(Guid id)
         {
-            TopicMaterial? topicModel = null;
-            topicModel = await _topicMaterialRepository.GetByTopicId(id);
-
-            if (topicModel == null || string.IsNullOrEmpty(topicModel.Description))
+            Topic? topicModel = null;
+            topicModel = await _topicRepository.GetById(id);
+            if (topicModel == null)
                 return null;
 
 
@@ -418,11 +416,11 @@ namespace SwipeLearn.Services
 
             var requestBody = new
             {
-                model = "gpt-4o-2024-08-06",
+                model = "gpt-4.1-nano",
                 messages = new[]
                 {
                     new { role = "system", content = "You are a helpful assistant. Respond ONLY with a JSON array of short strings. Do not include any markdown or extra text." },
-                    new { role = "user", content = $"Provide 3–10 important points about this topic as a JSON array of short strings: {topicModel.Description}" }
+                     new { role = "user", content = $"'{topicModel.Description}' hakkında en az 3, en fazla 10 tane kısa ve net bilgi maddesi üret. Çıktıyı yalnızca JSON array formatında ve tamamen Türkçe olarak ver." }
                 },
                 temperature = 0.3
             };
@@ -497,7 +495,7 @@ namespace SwipeLearn.Services
 
             var fullPaths = videoUrlPaths
                 .Select(path => Path.Combine("videos", path))
-                .ToList(); 
+                .ToList();
 
             return new VideoUrls
             {
