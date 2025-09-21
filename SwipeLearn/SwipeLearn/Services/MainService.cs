@@ -184,7 +184,7 @@ namespace SwipeLearn.Services
             _httpClient.DefaultRequestHeaders.Remove("Authorization");
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Key {falAiApiKey}");
 
-            var tasks = Enumerable.Range(0, 4).Select(_ => GenerateAndSaveSingleImageAsync(prompt)).ToList();
+            var tasks = Enumerable.Range(0, 12).Select(_ => GenerateAndSaveSingleImageAsync(prompt)).ToList();
             var results = await Task.WhenAll(tasks);
 
             return results.ToList();
@@ -497,7 +497,7 @@ namespace SwipeLearn.Services
 
             var fullPaths = videoUrlPaths
                 .Select(path => Path.Combine("videos", path))
-                .ToList(); // Düzenledim
+                .ToList(); 
 
             return new VideoUrls
             {
@@ -572,7 +572,6 @@ namespace SwipeLearn.Services
                 }
             }
 
-            // Deserialize
             List<Question>? generatedQuestions;
             try
             {
@@ -592,7 +591,6 @@ namespace SwipeLearn.Services
                 throw new Exception("ChatGPT output could not be deserialized.", ex);
             }
 
-            // Veritabanına kaydet
             foreach (var q in generatedQuestions)
             {
                 await _questionRepository.AddAsync(q);
@@ -621,28 +619,29 @@ namespace SwipeLearn.Services
             return response;
         }
 
-       // Böyle olunca kullanıcı yanlış şıkkı işaretleyince doğrusunu gösteremiyoruz
+        // Böyle olunca kullanıcı yanlış şıkkı işaretleyince doğrusunu gösteremiyoruz
+
         public async Task<QuizAnswerResponse> CheckAnswerAsync(QuizAnswerRequest request)
         {
             var questions = await _questionRepository.GetQuestionsByTopicIdAsync(request.Id);
 
             if (questions == null || questions.Count == 0)
-                return new QuizAnswerResponse { IsCorrect = false };
+                return new QuizAnswerResponse { CorrectOptionIndex = -1 };
 
             if (request.QuestionIndex < 0 || request.QuestionIndex >= questions.Count)
-                return new QuizAnswerResponse { IsCorrect = false };
+                return new QuizAnswerResponse { CorrectOptionIndex = -1 };
 
             var question = questions[request.QuestionIndex];
 
             if (request.OptionIndex < 0 || request.OptionIndex >= question.Answers.Length)
-                return new QuizAnswerResponse { IsCorrect = false };
+                return new QuizAnswerResponse { CorrectOptionIndex = -1 };
 
-            var selectedOption = ((OptionLetter)request.OptionIndex).ToString();
+            OptionLetter letter = Enum.Parse<OptionLetter>(question.Correct);
+            int index = (int)letter;
 
-            bool isCorrect = question.Correct == selectedOption;
-
-            return new QuizAnswerResponse { IsCorrect = isCorrect };
+            return new QuizAnswerResponse { CorrectOptionIndex = index };
         }
+
 
 
     }

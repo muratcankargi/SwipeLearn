@@ -9,7 +9,7 @@
 
     public class QuizAnswerResponse
     {
-        public bool IsCorrect { get; set; }
+        public int CorrectOptionIndex { get; set; }
     }
 
 }

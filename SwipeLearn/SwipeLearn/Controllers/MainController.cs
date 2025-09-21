@@ -44,8 +44,7 @@ namespace SwipeLearn.Controllers
         public async Task<IActionResult> IsVideosReady([FromQuery] Guid id)
         {
             bool isReady = await _service.IsVideosReady(id);
-            return Ok(new { isReady = isReady }); // Burda NotFound göndermeyelim çünkü ben zaten polling ile 10 sn de bir bakıyorum
-            // error gelirse anında tekrar kontrol ediyor frontend o kadar kontrole gerek yok
+            return Ok(new { isReady = isReady });
         }
 
         [HttpGet("/api/video")]
@@ -63,7 +62,7 @@ namespace SwipeLearn.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> GetQuiz([FromQuery] Guid id)
         {
-                 var quiz = await _service.GetQuizByTopicIdAsync(id);
+            var quiz = await _service.GetQuizByTopicIdAsync(id);
             if (quiz.Questions.Count == 0)
                 return NotFound();
 
@@ -71,10 +70,12 @@ namespace SwipeLearn.Controllers
         }
 
         [HttpPost("quiz")]
-        [ProducesResponseType(typeof(QuizAnswerResponse),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(QuizAnswerResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<QuizAnswerResponse>> CheckQuizAnswer([FromBody] QuizAnswerRequest request)
         {
             QuizAnswerResponse result = await _service.CheckAnswerAsync(request);
+            if (result.CorrectOptionIndex == -1) return StatusCode(500, new { error = "Something went wrong." });
             return Ok(result);
         }
     }
