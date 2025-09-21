@@ -1,4 +1,5 @@
-﻿using SwipeLearn.Context;
+﻿using Microsoft.EntityFrameworkCore;
+using SwipeLearn.Context;
 using SwipeLearn.Interfaces;
 using SwipeLearn.Models;
 using SwipeLearn.Models.ViewModels;
@@ -728,6 +729,61 @@ namespace SwipeLearn.Services
             var topics = await _topicRepository.GetAll();
             return topics;
         }
+
+        public async Task<QuizDescriptionAnswerResponse> GetQuizAnswerDescription(QuizAnswerRequest request)
+        {
+            // 1. Soruyu DB’den bul
+            var question = await _questionRepository.GetByTopicAndIndexAsync(request.Id, request.QuestionIndex);
+            if (question == null)
+                throw new Exception("Soru bulunamadı");
+
+            // 2. Doğru cevabı al
+            OptionLetter letter = Enum.Parse<OptionLetter>(question.Correct);
+            int index = (int)letter;
+            var correctAnswer = question.Answers[index];
+            var userAnswer = question.Answers[request.OptionIndex];
+
+            // 3. ChatGPT prompt hazırla
+            var apiKey = Environment.GetEnvironmentVariable("CHATGPT_API_KEY");
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+            var prompt = $@"
+                Soru: {question.QuestionText}
+                Kullanıcının seçtiği cevap: {userAnswer}
+                Doğru cevap: {correctAnswer}
+
+                Görevin: Doğru cevabın neden doğru olduğunu öğretici bir şekilde 2-3 cümleyle açıkla.
+                Yanıtında sadece açıklamayı döndür. Kullanıcının verdiği yanıt yanlışsa neden yanlış olduğunu da açıkla.
+                ";
+
+            var requestBody = new
+            {
+                model = "gpt-4o-mini",
+                messages = new[]
+                {
+            new { role = "system", content = "You are a helpful teacher." },
+            new { role = "user", content = prompt }
+        },
+                temperature = 0.5
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", requestBody);
+            var resultJson = await response.Content.ReadAsStringAsync();
+
+            using var doc = JsonDocument.Parse(resultJson);
+            var description = doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+
+            return new QuizDescriptionAnswerResponse
+            {
+                Description = description ?? "Açıklama üretilemedi."
+            };
+        }
+
 
     }
 }

@@ -101,6 +101,15 @@ namespace SwipeLearn.Repositories
                 .ToListAsync();
         }
 
+        public async Task<Question?> GetByTopicAndIndexAsync(Guid topicId, int questionIndex)
+        {
+            return await _context.Questions
+                .Where(q => q.TopicId == topicId)
+                .OrderBy(q => q.Id) // sabit sıralama için
+                .Skip(questionIndex)
+                .FirstOrDefaultAsync();
+        }
+
         public Task DeleteAsync(Guid id)
         {
             throw new NotImplementedException();

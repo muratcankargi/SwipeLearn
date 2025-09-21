@@ -88,5 +88,12 @@ namespace SwipeLearn.Controllers
             return Ok(topics);
         }
 
+        [HttpPost("/api/quiz/explanation")]
+        [ProducesResponseType(typeof(QuizDescriptionAnswerResponse),StatusCodes.Status200OK)]
+        public async Task<ActionResult> QuizDescription([FromBody] QuizAnswerRequest request)
+        {
+            QuizDescriptionAnswerResponse result = await _service.GetQuizAnswerDescription(request);
+            return Ok(result);
+        }
     }
 }
