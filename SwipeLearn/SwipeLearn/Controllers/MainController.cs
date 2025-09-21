@@ -49,7 +49,7 @@ namespace SwipeLearn.Controllers
 
         [HttpGet("/api/video")]
         [ProducesResponseType(typeof(VideoUrls), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(VideoUrls), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetVideoByTopicId([FromQuery] Guid id)
         {
             VideoUrls videoPaths = await _service.GetVideoByTopicId(id);
