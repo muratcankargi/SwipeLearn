@@ -274,12 +274,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/explore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TopicListPagination"];
+                        "application/json": components["schemas"]["TopicListPagination"];
+                        "text/json": components["schemas"]["TopicListPagination"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         IsReady: {
             isReady?: boolean;
+        };
+        PagingInfo: {
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            max?: number;
         };
         ProblemDetails: {
             type?: string | null;
@@ -290,6 +337,16 @@ export interface components {
             instance?: string | null;
         } & {
             [key: string]: unknown;
+        };
+        Question: {
+            /** Format: int32 */
+            id?: number;
+            /** Format: uuid */
+            topicId: string;
+            questionText?: string | null;
+            answers: string[];
+            correct: string;
+            topic?: components["schemas"]["Topic"];
         };
         QuizAnswerRequest: {
             /** Format: uuid */
@@ -314,6 +371,9 @@ export interface components {
             /** Format: uuid */
             id?: string;
             description: string;
+            videos?: components["schemas"]["Video"][] | null;
+            questions?: components["schemas"]["Question"][] | null;
+            topicMaterials?: components["schemas"]["TopicMaterial"][] | null;
         };
         TopicGuid: {
             /** Format: uuid */
@@ -321,6 +381,28 @@ export interface components {
         };
         TopicInfoItem: {
             info?: string[] | null;
+        };
+        TopicListPagination: {
+            pageInfo?: components["schemas"]["PagingInfo"];
+            list?: components["schemas"]["Topic"][] | null;
+        };
+        TopicMaterial: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            topicId?: string;
+            description?: string[] | null;
+            images?: string[] | null;
+            voice?: string[] | null;
+            topic?: components["schemas"]["Topic"];
+        };
+        Video: {
+            /** Format: int32 */
+            id?: number;
+            /** Format: uuid */
+            topicId: string;
+            videoPath: string;
+            topic?: components["schemas"]["Topic"];
         };
         VideoUrls: {
             videoUrls?: string[] | null;

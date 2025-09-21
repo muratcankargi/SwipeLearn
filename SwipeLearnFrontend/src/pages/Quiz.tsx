@@ -71,8 +71,11 @@ export function Quiz() {
         },
       },
       {
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
           if (optionIndex === data?.correctOptionIndex) {
+            const audio = new Audio("/correct.mp3");
+            await audio.play();
+
             setTimeout(() => nextQuestion(), 300);
             setCorrectQuestionsCount((prevValue) => prevValue + 1);
           }

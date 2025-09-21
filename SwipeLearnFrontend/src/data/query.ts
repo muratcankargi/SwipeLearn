@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  getExplore,
   getIsVideosReady,
   getTopicQuiz,
   getTopicShortInfo,
@@ -119,6 +120,22 @@ export function usePostTopicQuiz() {
     mutationKey: ["post-topic-quiz"],
     mutationFn: async ({ body }: { body: PostTopicQuizBody }) => {
       const { data, error } = await postTopicQuiz({ body });
+
+      if (error) {
+        console.log("Error: ", error);
+        throw error;
+      }
+
+      return data;
+    },
+  });
+}
+
+export function useGetExplore() {
+  return useQuery({
+    queryKey: ["get-explore"],
+    queryFn: async () => {
+      const { data, error } = await getExplore();
 
       if (error) {
         console.log("Error: ", error);

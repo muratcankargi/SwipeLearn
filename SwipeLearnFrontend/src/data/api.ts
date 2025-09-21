@@ -39,3 +39,7 @@ export async function getTopicQuiz({ query }: { query: GetTopicQuizQuery }) {
 export async function postTopicQuiz({ body }: { body: PostTopicQuizBody }) {
   return await client.POST("/api/Topic/quiz", { body });
 }
+
+export async function getExplore() {
+  return await client.GET("/api/explore");
+}
