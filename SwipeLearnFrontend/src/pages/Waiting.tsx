@@ -1,6 +1,12 @@
 import { WaitingInfos } from "@/components/waiting-infos";
+import { useGetIsVideosReady } from "@/data/query";
+import { useParams } from "react-router";
 
 export function Waiting() {
+  const params = useParams<{ id: string }>();
+
+  useGetIsVideosReady({ query: { id: params.id } });
+
   return (
     <>
       <div className="flex flex-col gap-4">

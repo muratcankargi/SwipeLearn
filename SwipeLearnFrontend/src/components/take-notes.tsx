@@ -14,7 +14,7 @@ export function TakeNotes() {
 
   return (
     <Popover>
-      <PopoverTrigger className="absolute bottom-4 left-4">
+      <PopoverTrigger asChild className="absolute bottom-4 left-4">
         <Button className="bg-tw-secondary hover:bg-tw-secondary/90">
           Not Al
           <Pencil />
