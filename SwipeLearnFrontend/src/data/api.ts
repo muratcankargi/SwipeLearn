@@ -4,6 +4,7 @@ import type {
   GetTopicQuizQuery,
   GetTopicShortInfoQuery,
   GetVideoQuery,
+  PostQuizExplanationBody,
   PostTopicBody,
   PostTopicQuizBody,
 } from "./schema-types";
@@ -42,4 +43,12 @@ export async function postTopicQuiz({ body }: { body: PostTopicQuizBody }) {
 
 export async function getExplore() {
   return await client.GET("/api/explore");
+}
+
+export async function postQuizExplanation({
+  body,
+}: {
+  body: PostQuizExplanationBody;
+}) {
+  return await client.POST("/api/quiz/explanation", { body });
 }

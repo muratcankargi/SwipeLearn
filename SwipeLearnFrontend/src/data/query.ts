@@ -5,6 +5,7 @@ import {
   getTopicQuiz,
   getTopicShortInfo,
   getVideo,
+  postQuizExplanation,
   postTopic,
   postTopicQuiz,
 } from "./api";
@@ -13,6 +14,7 @@ import type {
   GetTopicQuizQuery,
   GetTopicShortInfoQuery,
   GetVideoQuery,
+  PostQuizExplanationBody,
   PostTopicBody,
   PostTopicQuizBody,
 } from "./schema-types";
@@ -136,6 +138,22 @@ export function useGetExplore() {
     queryKey: ["get-explore"],
     queryFn: async () => {
       const { data, error } = await getExplore();
+
+      if (error) {
+        console.log("Error: ", error);
+        throw error;
+      }
+
+      return data;
+    },
+  });
+}
+
+export function usePostQuizExplanation() {
+  return useMutation({
+    mutationKey: ["post-quiz-explanation"],
+    mutationFn: async ({ body }: { body: PostQuizExplanationBody }) => {
+      const { data, error } = await postQuizExplanation({ body });
 
       if (error) {
         console.log("Error: ", error);

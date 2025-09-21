@@ -18,3 +18,7 @@ export type GetTopicQuizQuery =
 export type PostTopicQuizBody = NonNullable<
   paths["/api/Topic/quiz"]["post"]["requestBody"]
 >["content"]["application/json"];
+
+export type PostQuizExplanationBody = NonNullable<
+  paths["/api/quiz/explanation"]["post"]["requestBody"]
+>["content"]["application/json"];

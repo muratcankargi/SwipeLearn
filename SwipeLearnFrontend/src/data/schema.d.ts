@@ -311,6 +311,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/quiz/explanation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["QuizAnswerRequest"];
+                    "text/json": components["schemas"]["QuizAnswerRequest"];
+                    "application/*+json": components["schemas"]["QuizAnswerRequest"];
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QuizDescriptionAnswerResponse"];
+                        "application/json": components["schemas"]["QuizDescriptionAnswerResponse"];
+                        "text/json": components["schemas"]["QuizDescriptionAnswerResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -360,6 +403,9 @@ export interface components {
             /** Format: int32 */
             correctOptionIndex?: number;
         };
+        QuizDescriptionAnswerResponse: {
+            description?: string | null;
+        };
         QuizItem: {
             question?: string | null;
             options?: string[] | null;
@@ -371,6 +417,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             description: string;
+            isVideosReady?: boolean;
             videos?: components["schemas"]["Video"][] | null;
             questions?: components["schemas"]["Question"][] | null;
             topicMaterials?: components["schemas"]["TopicMaterial"][] | null;

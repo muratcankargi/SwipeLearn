@@ -1,3 +1,4 @@
+import { ExplanationButton } from "@/components/explanation-button";
 import { TakeNotes } from "@/components/take-notes";
 import { Button } from "@/components/ui/button";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
@@ -22,6 +23,12 @@ const indexToLetter: Record<number, string> = {
   3: "D",
 };
 
+export type Answer = {
+  questionIndex: number;
+  optionIndex: number;
+  correctOptionIndex: number | undefined;
+};
+
 export function Quiz() {
   const params = useParams<{ id: string }>();
 
@@ -36,13 +43,7 @@ export function Quiz() {
 
   const progress = ((currentIndex + 1) * 100) / questions.length;
 
-  const [answers, setAnswers] = useState<
-    {
-      questionIndex: number;
-      optionIndex: number;
-      correctOptionIndex: number | undefined;
-    }[]
-  >([]);
+  const [answers, setAnswers] = useState<Answer[]>([]);
 
   const [endQuiz, setEndQuiz] = useState(false);
   const [correctQuestionsCount, setCorrectQuestionsCount] = useState(0);
@@ -95,6 +96,13 @@ export function Quiz() {
       },
     );
   };
+
+  const isAnsweredIncorrectly = answers.find(
+    (answer) =>
+      answer.questionIndex === currentIndex &&
+      answer.correctOptionIndex &&
+      answer.correctOptionIndex !== answer.optionIndex,
+  );
 
   const repeatQuiz = () => {
     setAnswers([]);
@@ -149,6 +157,11 @@ export function Quiz() {
             <ArrowLeft />
             Önceki Soru
           </Button>
+
+          {isAnsweredIncorrectly && (
+            <ExplanationButton answer={isAnsweredIncorrectly} />
+          )}
+
           <Button
             disabled={currentIndex + 1 === questions.length}
             onClick={nextQuestion}
