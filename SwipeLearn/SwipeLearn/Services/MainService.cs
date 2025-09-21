@@ -164,6 +164,7 @@ namespace SwipeLearn.Services
                         using var videoScope = _scopeFactory.CreateScope();
                         var scopedService = videoScope.ServiceProvider.GetRequiredService<MainService>();
 
+                        await scopedService.GenerateTextToSpeech(part, id);
                         await scopedService.GenerateAndSaveImagesAsync(id, topic, part);
                         await scopedService.CreateVideosAsync(id, index);
 
@@ -341,7 +342,7 @@ namespace SwipeLearn.Services
         }
 
         public async Task<string> GenerateTextToSpeech(string text, Guid id, string outputFilePath = null, string outputFormat = "mp3_44100_128")
-        {
+         {
             try
             {
 
@@ -406,14 +407,14 @@ namespace SwipeLearn.Services
 
             if (topic.Images == null || topic.Images.Count == 0)
                 throw new ArgumentException("En az 1 görsel gerekli", nameof(topic.Images));
-            //if (topic.Voice == null || topic.Voice.Count == 0)
-            //    throw new ArgumentException("En az 1 ses gerekli", nameof(topic.Voice));
+            if (topic.Voice == null || topic.Voice.Count == 0)
+                throw new ArgumentException("En az 1 ses gerekli", nameof(topic.Voice));
 
             var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "videos");
             Directory.CreateDirectory(outputDir);
 
             // Tek bir ses dosyası seçelim (örn. ilkini)  topic.Voice[videoIndex]
-            var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", "elevenlabs_20250921_152410.mp3");
+            var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "voices", topic.Voice[videoIndex]);
 
             // Ses uzunluğunu öğren
             var audioInfo = await FFmpeg.GetMediaInfo(audioPath);
