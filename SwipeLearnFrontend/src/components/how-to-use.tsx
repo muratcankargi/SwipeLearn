@@ -22,7 +22,7 @@ const steps = [
 export function HowToUse() {
   return (
     <div
-      className="max-w-8xl mx-auto mt-24 mb-24 grid grid-cols-2 gap-24"
+      className="max-w-8xl mx-auto mt-24 mb-24 grid grid-cols-1 gap-24 sm:grid-cols-2"
       id="nasil-kullanilir"
     >
       {steps.map((step, index) => {

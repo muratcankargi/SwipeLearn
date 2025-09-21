@@ -29,8 +29,6 @@ export function App() {
   const mutation = usePostTopic();
 
   const onSubmit = (data: FormData) => {
-    console.log("Data: ", data);
-
     mutation.mutate(
       { body: { description: data.topic } },
       {
@@ -53,11 +51,13 @@ export function App() {
           <div className="mx-auto">
             <img src="/mascot.png" width={200} height={200} />
           </div>
-          <h1 className="text-4xl font-extrabold">Ne öğrenmek istiyorsun?</h1>
+          <h1 className="text-center text-4xl font-extrabold">
+            Ne öğrenmek istiyorsun?
+          </h1>
         </div>
 
         <form
-          className="flex w-1/2 flex-col items-center justify-center gap-4"
+          className="flex w-full flex-col items-center justify-center gap-4 px-4 sm:w-1/2"
           onSubmit={methods.handleSubmit(onSubmit)}
         >
           <div className="flex min-h-36 w-full flex-col">

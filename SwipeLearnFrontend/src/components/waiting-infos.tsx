@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { LoadingIndicator } from "./ui/loading-indicator";
 
-const DEFAULT_TIMER = 20;
+const DEFAULT_TIMER = 10;
 
 export function WaitingInfos() {
   const params = useParams<{ id: string }>();
@@ -36,7 +36,7 @@ export function WaitingInfos() {
   const currentInfo = infos[infoIndex] ?? undefined;
 
   return (
-    <div className="bg-tw-primary relative my-2 flex min-h-24 w-1/3 items-center justify-center rounded-md">
+    <div className="bg-tw-primary relative my-2 flex min-h-24 w-[95%] items-center justify-center rounded-md sm:w-1/3">
       {currentInfo && (
         <div className="absolute top-1 left-2 text-sm">{timer}</div>
       )}

@@ -1,6 +1,6 @@
 export function Navbar() {
   return (
-    <nav className="absolute top-4 right-4">
+    <nav className="absolute top-6 right-4">
       <ul className="flex gap-x-6">
         <li>
           <button

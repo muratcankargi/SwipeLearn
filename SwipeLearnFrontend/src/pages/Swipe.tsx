@@ -17,9 +17,11 @@ export function Swipe({ videoUrls }: { videoUrls: string[] }) {
   return (
     <>
       <div className="my-4 grid w-full grid-cols-3 px-4">
-        <div className="font-semibold">
-          {currentVideoIndex + 1}/{videoUrls.length}. Video
-        </div>
+        <Link className="flex items-center gap-x-2" to={`/`}>
+          <ArrowLeft className="mt-1" />
+          Ana Sayfaya Dön
+        </Link>
+
         <div className="flex justify-center gap-4">
           <button
             className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-2 transition-transform hover:scale-110 disabled:opacity-50"
